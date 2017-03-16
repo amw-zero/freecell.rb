@@ -16,7 +16,21 @@ module Freecell
     end
 
     def render(game_state)
-      Curses.addstr(game_state.to_s)
+      Curses.clear
+
+      Curses.addstr("[   ] [   ] [   ] [   ]")
+      Curses.setpos(0, 28)
+      Curses.addstr(":)")
+      Curses.setpos(0, 35)
+      Curses.addstr("[   ] [   ] [   ] [   ]")
+
+      Curses.setpos(4, 0)
+      7.times do |i|
+        Curses.addstr(game_state.cascades[0][i].to_s)
+        Curses.setpos(4 + i, 0)
+      end
+
+      Curses.refresh
     end
 
     def parse_input
