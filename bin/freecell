@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+require 'freecell'
+
+state = Freecell::GameState.new
+ui = Freecell::NCursesUI.new
+ui.render(state)
+ui.setup
