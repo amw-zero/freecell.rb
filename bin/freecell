@@ -4,5 +4,8 @@ require 'freecell'
 
 state = Freecell::GameState.new
 ui = Freecell::NCursesUI.new
-ui.render(state)
 ui.setup
+ui.render(state)
+loop do
+  ui.render(state.apply(ui.parse_input))
+end

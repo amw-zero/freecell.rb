@@ -1,27 +1,31 @@
-require "ncurses"
+require "curses"
+require_relative "move_parser"
 
 module Freecell
   class NCursesUI
+    def initialize
+      @move_parser = MoveParser.new
+    end
     def setup
-      Ncurses.initscr
-      Ncurses.cbreak           # provide unbuffered input
-      Ncurses.noecho           # turn off input echoing
-      Ncurses.nonl             # turn off newline translation
-      Ncurses.stdscr.intrflush(false) # turn off flush-on-interrupt
-      Ncurses.stdscr.keypad(true)     # turn on keypad mode
-
-      Ncurses.stdscr.addstr("Press a key to continue") # output string
-      Ncurses.stdscr.getch                             # get a charachter
-
+      Curses.init_screen
+      Curses.cbreak
+      Curses.noecho
+      Curses.nonl
     ensure
-      Ncurses.echo
-      Ncurses.nocbreak
-      Ncurses.nl
-      Ncurses.endwin
+      Curses.close_screen
     end
 
     def render(game_state)
-      #puts game_state.cards
+      Curses.addstr(game_state.cards.to_s)
+    end
+
+    def parse_input
+      input = ""
+      loop do
+        input << Curses.getch
+        move = @move_parser.parse_input(input)
+        break move if move
+      end
     end
   end
 end
