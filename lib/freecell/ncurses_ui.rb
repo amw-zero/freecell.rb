@@ -16,7 +16,7 @@ module Freecell
     end
 
     def render(game_state)
-      Curses.addstr(game_state.cards.to_s)
+      Curses.addstr(game_state.to_s)
     end
 
     def parse_input

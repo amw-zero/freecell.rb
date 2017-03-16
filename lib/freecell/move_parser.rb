@@ -3,13 +3,13 @@ module Freecell
     def parse_input(input)
       case
       when cascade_move?(input)
-        puts 'Cascade move!'
+        #puts 'Cascade move!'
         [:cascade, 0, 0]
       when free_cell_move?(input)
-        puts 'Free cell move'
+        #puts 'Free cell move'
         [:free_cell, 0 , 0]
       else
-        puts 'nope'
+        #puts 'nope'
         nil
       end
     end
