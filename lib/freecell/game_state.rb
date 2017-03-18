@@ -14,8 +14,7 @@ module Freecell
     end
 
     def apply(move)
-      type = move[0]
-      case type
+      case move[0]
       when :cascade_to_free_cell
         perform_cascade_to_freecell_move(move)
       when :cascade
@@ -60,7 +59,7 @@ module Freecell
       _, source, dest = move
       source_card = @cascades[source].last
       dest_card = @cascades[dest].last
-      source_card < dest_card && source_card.opposite_color?(dest_card)
+      source_card.can_move_to?(dest_card)
     end
   end
 end

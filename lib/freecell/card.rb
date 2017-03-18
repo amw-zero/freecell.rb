@@ -20,9 +20,11 @@ module Freecell
       end
     end
 
-    def <=>(other)
-      rank <=> other.rank
+    def can_move_to?(other)
+      rank == other.rank - 1 && opposite_color?(other)
     end
+
+    private
 
     def opposite_color?(other)
       red = [:hearts, :diamonds]
