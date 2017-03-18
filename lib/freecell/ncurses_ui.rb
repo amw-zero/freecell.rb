@@ -55,10 +55,22 @@ module Freecell
     end
 
     def render_cascades(game_state, start_y)
+      current_y = start_y
       game_state.printable_card_grid.each_with_index do |row, i|
         Curses.addstr(row.map(&:to_s).join('   '))
-        Curses.setpos(start_y + i, 0)
+        current_y = start_y + i
+        Curses.setpos(current_y, 0)
       end
+      Curses.setpos(current_y + 2, 0)
+      game_state.cascades.length.times do |i|
+        Curses.addstr(" #{i_to_cascade_letter(i)}    ")
+      end
+    end
+
+
+    def i_to_cascade_letter(i)
+      ascii_a = 97
+      [i + ascii_a].pack('c*')
     end
   end
 end
