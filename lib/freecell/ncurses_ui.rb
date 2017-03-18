@@ -19,7 +19,7 @@ module Freecell
 
     def render(game_state)
       Curses.clear
-      render_top_area
+      render_top_area(game_state)
       Curses.setpos(4, 0)
       render_cascades(game_state, 4)
 
@@ -37,12 +37,21 @@ module Freecell
 
     private
 
-    def render_top_area
-      Curses.addstr('[   ] [   ] [   ] [   ]')
+    def render_top_area(game_state)
+      render_free_cells(game_state)
       Curses.setpos(0, 28)
       Curses.addstr(':)')
       Curses.setpos(0, 35)
       Curses.addstr('[   ] [   ] [   ] [   ]')
+    end
+
+    def render_free_cells(game_state)
+      game_state.free_cells.each do |card|
+        Curses.addstr("[#{card}] ")
+      end
+      (4 - game_state.free_cells.count).times do
+        Curses.addstr('[   ] ')
+      end
     end
 
     def render_cascades(game_state, start_y)
