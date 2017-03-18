@@ -1,7 +1,7 @@
 module Freecell
+  # A playing card
   class Card
-
-    SUITS = [:hearts, :diamonds, :spades, :clubs]
+    SUITS = [:hearts, :diamonds, :spades, :clubs].freeze
 
     def initialize(rank, suit)
       @rank = rank
@@ -9,11 +9,15 @@ module Freecell
     end
 
     def to_s
-      "#{@rank}#{@suit.to_s[0]}"
+      if @rank < 10
+        " #{@rank}#{@suit.to_s[0]}"
+      else
+        "#{@rank}#{@suit.to_s[0]}"
+      end
     end
 
     def <=>(other)
-      self.to_i <=> other.to_i
+      to_i <=> other.to_i
     end
   end
 end

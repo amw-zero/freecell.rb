@@ -1,11 +1,13 @@
-require "curses"
-require_relative "move_parser"
+require 'curses'
+require_relative 'move_parser'
 
 module Freecell
+  # Commandline UI
   class NCursesUI
     def initialize
       @move_parser = MoveParser.new
     end
+
     def setup
       Curses.init_screen
       Curses.cbreak
@@ -17,28 +19,36 @@ module Freecell
 
     def render(game_state)
       Curses.clear
-
-      Curses.addstr("[   ] [   ] [   ] [   ]")
-      Curses.setpos(0, 28)
-      Curses.addstr(":)")
-      Curses.setpos(0, 35)
-      Curses.addstr("[   ] [   ] [   ] [   ]")
-
+      render_top_area
       Curses.setpos(4, 0)
-      7.times do |i|
-        Curses.addstr(game_state.cascades[0][i].to_s)
-        Curses.setpos(4 + i, 0)
-      end
+      render_cascades(game_state, 4)
 
       Curses.refresh
     end
 
     def parse_input
-      input = ""
+      input = ''
       loop do
         input << Curses.getch
         move = @move_parser.parse_input(input)
         break move if move
+      end
+    end
+
+    private
+
+    def render_top_area
+      Curses.addstr('[   ] [   ] [   ] [   ]')
+      Curses.setpos(0, 28)
+      Curses.addstr(':)')
+      Curses.setpos(0, 35)
+      Curses.addstr('[   ] [   ] [   ] [   ]')
+    end
+
+    def render_cascades(game_state, start_y)
+      game_state.printable_card_grid.each_with_index do |row, i|
+        Curses.addstr(row.map(&:to_s).join('   '))
+        Curses.setpos(start_y + i, 0)
       end
     end
   end
