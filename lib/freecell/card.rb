@@ -9,7 +9,11 @@ module Freecell
     end
 
     def to_s
-      "#{@rank}#{@suit.to_s[0]}"
+      if @rank < 10
+        " #{@rank}#{@suit.to_s[0]}"
+      else
+        "#{@rank}#{@suit.to_s[0]}"
+      end
     end
 
     def <=>(other)
