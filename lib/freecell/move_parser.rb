@@ -24,8 +24,15 @@ module Freecell
     end
 
     def parse_cascade_move(input)
-      source, dest = input.split("")
+      source, dest = input.split("").map { |c| cascade_to_i(c) }
       [:cascade, source, dest]
+    end
+
+    # Use ascii for lowercase a to
+    # offset the char to an index
+    def cascade_to_i(char)
+      ascii_a = 97
+      char.bytes.first - ascii_a
     end
   end
 

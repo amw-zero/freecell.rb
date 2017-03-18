@@ -17,7 +17,7 @@ module Freecell
       when :free_cell
         @free_cells << Card.new(rand(13), [:hearts, :diamonds].shuffle.first)
       when :cascade
-        #puts 'applying cascade move'
+        perform_cascade_move(move)
       else
         #puts 'unrecognized move'
       end
@@ -30,7 +30,7 @@ module Freecell
 
     def printable_card_grid
       max_length = @cascades.map(&:length).max
-      @cascades.map { |c| c += (0...max_length-c.count).map { 'empty-card!' } }.transpose
+      @cascades.map { |c| c += (0...max_length-c.count).map { '   ' } }.transpose
     end
 
     #private
@@ -40,6 +40,12 @@ module Freecell
       full_cascades = full_cascade_cards.each_slice(7).to_a
       short_cascades = short_cascade_cards.each_slice(6).to_a
       full_cascades += short_cascades
+    end
+
+    def perform_cascade_move(move)
+      _, source, dest = move
+      card = @cascades[source].pop
+      @cascades[dest] << card
     end
   end
 end
