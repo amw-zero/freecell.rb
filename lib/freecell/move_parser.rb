@@ -1,15 +1,12 @@
 module Freecell
+  # Takes in raw input and returns a move
+  # that can be applied to a game state.
   class MoveParser
     def parse_input(input)
-      case
-      when cascade_move?(input)
+      if cascade_move?(input)
         parse_cascade_move(input)
-      when free_cell_move?(input)
-        #puts 'Free cell move'
-        [:free_cell, 0 , 0]
-      else
-        #puts 'nope'
-        nil
+      elsif free_cell_move?(input)
+        [:free_cell, 0, 0]
       end
     end
 
@@ -24,7 +21,7 @@ module Freecell
     end
 
     def parse_cascade_move(input)
-      source, dest = input.split("").map { |c| cascade_to_i(c) }
+      source, dest = input.split('').map { |c| cascade_to_i(c) }
       [:cascade, source, dest]
     end
 
@@ -35,5 +32,4 @@ module Freecell
       char.bytes.first - ascii_a
     end
   end
-
 end

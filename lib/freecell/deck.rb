@@ -1,6 +1,7 @@
 require_relative 'card'
 
 module Freecell
+  # A deck of 52 playing cards
   class Deck
     SIZE = 52
 
