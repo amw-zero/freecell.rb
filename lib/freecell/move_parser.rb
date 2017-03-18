@@ -5,8 +5,8 @@ module Freecell
     def parse_input(input)
       if cascade_move?(input)
         parse_cascade_move(input)
-      elsif free_cell_move?(input)
-        [:free_cell, 0, 0]
+      elsif cascade_to_free_cell_move?(input)
+        parse_cascade_to_freecell_move(input)
       end
     end
 
@@ -16,13 +16,18 @@ module Freecell
       !(input =~ /[a-h]{2}/).nil?
     end
 
-    def free_cell_move?(input)
-      !(input =~ /[a-h][wz]/).nil?
+    def cascade_to_free_cell_move?(input)
+      !(input =~ /[a-h][\ ]/).nil?
     end
 
     def parse_cascade_move(input)
       source, dest = input.split('').map { |c| cascade_to_i(c) }
       [:cascade, source, dest]
+    end
+
+    def parse_cascade_to_freecell_move(input)
+      source = cascade_to_i(input.split('').first)
+      [:cascade_to_free_cell, source]
     end
 
     # Use ascii for lowercase a to

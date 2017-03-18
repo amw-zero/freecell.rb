@@ -1,6 +1,10 @@
 module Freecell
   # A playing card
   class Card
+    include Comparable
+
+    attr_reader :rank, :suit
+
     SUITS = [:hearts, :diamonds, :spades, :clubs].freeze
 
     def initialize(rank, suit)
@@ -17,7 +21,12 @@ module Freecell
     end
 
     def <=>(other)
-      to_i <=> other.to_i
+      rank <=> other.rank
+    end
+
+    def opposite_color?(other)
+      red = [:hearts, :diamonds]
+      red.include?(suit) ^ red.include?(other.suit)
     end
   end
 end
