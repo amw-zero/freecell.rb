@@ -4,7 +4,7 @@ require_relative 'move_parser'
 module Freecell
   # Commandline UI
   class NCursesUI
-    BLACK_CARD_COLOR_PAIR = 1
+    BLACK_CARD_COLOR_PAIR_ID = 1
 
     def initialize
       @move_parser = MoveParser.new
@@ -24,7 +24,7 @@ module Freecell
     def setup_color
       Curses.start_color
       Curses.init_pair(
-        BLACK_CARD_COLOR_PAIR,
+        BLACK_CARD_COLOR_PAIR_ID,
         Curses::COLOR_CYAN,
         Curses::COLOR_BLACK
       )
@@ -65,7 +65,7 @@ module Freecell
 
     def render_free_cells(game_state)
       game_state.free_cells.each do |card|
-        Curses.addstr("[#{card}] ")
+        draw_card_with_border(card)
       end
       (4 - game_state.free_cells.count).times do
         Curses.addstr('[   ]')
@@ -75,7 +75,7 @@ module Freecell
     def render_foundations(game_state)
       [:diamonds, :hearts, :spades, :clubs].each do |suit|
         card = game_state.foundations[suit].last || '   '
-        Curses.addstr("[#{card}]")
+        draw_card_with_border(card)
       end
     end
 
@@ -100,10 +100,29 @@ module Freecell
     end
 
     def draw_card(card)
-      Curses.attron(Curses.color_pair(BLACK_CARD_COLOR_PAIR)) if card.respond_to?(:black?) && card.black?
-      Curses.addstr(card.to_s)
-      Curses.attroff(Curses.color_pair(BLACK_CARD_COLOR_PAIR)) if card.respond_to?(:black?) && card.black?
+      with_black_card_coloring(card) do |card|
+        Curses.addstr(card.to_s)
+      end
       Curses.addstr('  ')
+    end
+
+    def draw_card_with_border(card)
+      Curses.addstr('[')
+      with_black_card_coloring(card) do |card|
+        Curses.addstr(card.to_s)
+      end
+      Curses.addstr(']')
+    end
+
+    def black_card_color_pair
+      @black_card_color_pair ||= Curses.color_pair(BLACK_CARD_COLOR_PAIR_ID)
+    end
+
+    def with_black_card_coloring(card)
+      is_black_card = card.respond_to?(:black?) && card.black?
+      Curses.attron(black_card_color_pair) if is_black_card
+      yield card
+      Curses.attroff(black_card_color_pair) if is_black_card
     end
 
     def advance_y(by:)
