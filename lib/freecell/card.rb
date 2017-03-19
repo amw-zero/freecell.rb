@@ -20,15 +20,9 @@ module Freecell
       end
     end
 
-    def can_move_to?(other)
-      rank == other.rank - 1 && opposite_color?(other)
-    end
-
     def black?
       [:clubs, :spades].include?(suit)
     end
-
-    private
 
     def opposite_color?(other)
       red = [:hearts, :diamonds]

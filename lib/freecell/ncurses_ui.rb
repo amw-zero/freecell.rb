@@ -33,7 +33,7 @@ module Freecell
     def render(game_state)
       Curses.clear
       render_top_area(game_state)
-      advance_y(by: 4)
+      advance_y(by: 3)
       render_cascades(game_state, 4)
 
       Curses.refresh
@@ -41,7 +41,7 @@ module Freecell
     end
 
     def parse_input
-      input = ''
+      input = '' # !! reset this on invalid input
       loop do
         input << Curses.getch
         move = @move_parser.parse_input(input)
@@ -57,10 +57,10 @@ module Freecell
 
     def render_top_area(game_state)
       render_free_cells(game_state)
-      Curses.setpos(0, 28)
-      Curses.addstr(':)')
-      Curses.setpos(0, 35)
-      Curses.addstr('[   ] [   ] [   ] [   ]')
+      Curses.setpos(@curr_y, 21)
+      Curses.addstr('=)')
+      Curses.setpos(@curr_y, 23)
+      render_foundations(game_state)
     end
 
     def render_free_cells(game_state)
@@ -68,18 +68,29 @@ module Freecell
         Curses.addstr("[#{card}] ")
       end
       (4 - game_state.free_cells.count).times do
-        Curses.addstr('[   ] ')
+        Curses.addstr('[   ]')
+      end
+    end
+
+    def render_foundations(game_state)
+      [:diamonds, :hearts, :spades, :clubs].each do |suit|
+        card = game_state.foundations[suit].last || '   '
+        Curses.addstr("[#{card}]")
       end
     end
 
     def render_cascades(game_state, start_y)
       game_state.printable_card_grid.each_with_index do |row, i|
-        row.each { |card| draw_card(card) }
+        Curses.addstr('  ')
+        row.each do |card|
+          draw_card(card)
+        end
         advance_y(by: 1)
       end
       advance_y(by: 2)
+      Curses.setpos(@curr_y, 3)
       game_state.cascades.length.times do |i|
-        Curses.addstr(" #{i_to_cascade_letter(i)}    ")
+        Curses.addstr("#{i_to_cascade_letter(i)}    ")
       end
     end
 
@@ -92,7 +103,7 @@ module Freecell
       Curses.attron(Curses.color_pair(BLACK_CARD_COLOR_PAIR)) if card.respond_to?(:black?) && card.black?
       Curses.addstr(card.to_s)
       Curses.attroff(Curses.color_pair(BLACK_CARD_COLOR_PAIR)) if card.respond_to?(:black?) && card.black?
-      Curses.addstr('   ')
+      Curses.addstr('  ')
     end
 
     def advance_y(by:)

@@ -7,6 +7,8 @@ module Freecell
         parse_cascade_move(input)
       elsif cascade_to_free_cell_move?(input)
         parse_cascade_to_freecell_move(input)
+      elsif to_foundation_move?(input)
+        parse_to_foundation_move(input)
       end
     end
 
@@ -17,7 +19,12 @@ module Freecell
     end
 
     def cascade_to_free_cell_move?(input)
-      !(input =~ /[a-h][\ ]/).nil?
+      !(input =~ /[a-h]\ /).nil?
+    end
+
+    def to_foundation_move?(input)
+      # Regex for \n not working
+      !(input =~ /^[a-h]/).nil? && input.bytes.last == 13
     end
 
     def parse_cascade_move(input)
@@ -28,6 +35,11 @@ module Freecell
     def parse_cascade_to_freecell_move(input)
       source = cascade_to_i(input.split('').first)
       [:cascade_to_free_cell, source]
+    end
+
+    def parse_to_foundation_move(input)
+      source = cascade_to_i(input.split('').first)
+      [:cascade_to_foundation, source]
     end
 
     # Use ascii for lowercase a to
