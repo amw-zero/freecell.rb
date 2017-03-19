@@ -24,6 +24,10 @@ module Freecell
       rank == other.rank - 1 && opposite_color?(other)
     end
 
+    def black?
+      [:clubs, :spades].include?(suit)
+    end
+
     private
 
     def opposite_color?(other)
