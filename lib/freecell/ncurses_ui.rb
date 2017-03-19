@@ -16,6 +16,7 @@ module Freecell
       Curses.cbreak
       Curses.noecho
       Curses.nonl
+      Curses.curs_set(0)
       setup_color
     ensure
       Curses.close_screen
@@ -44,12 +45,20 @@ module Freecell
       input = '' # !! reset this on invalid input
       loop do
         input << Curses.getch
+        unless input_valid?(input)
+          input = ''
+          next
+        end
         move = @move_parser.parse_input(input)
         break move if move
       end
     end
 
     private
+
+    def input_valid?(input)
+      !(input =~ /^[a-z]|[w-z]|\d/).nil?
+    end
 
     def reset_state
       @curr_y = 0
@@ -91,7 +100,7 @@ module Freecell
         end
         advance_y(by: 1)
       end
-      advance_y(by: 2)
+      advance_y(by: 1)
       Curses.setpos(@curr_y, 3)
       game_state.cascades.length.times do |i|
         Curses.addstr("#{i_to_cascade_letter(i)}    ")
