@@ -81,7 +81,7 @@ module Freecell
       _, source = move
       source_card = @cascades[source].last
       return true if source_card.rank == 1
-
+      return false if @foundations[source_card.suit].empty?
       foundation_card = @foundations[source_card.suit].last
       source_card.rank == foundation_card.rank + 1
     end
