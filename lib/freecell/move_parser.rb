@@ -7,6 +7,8 @@ module Freecell
         parse_cascade_move(input)
       elsif cascade_to_free_cell_move?(input)
         parse_cascade_to_freecell_move(input)
+      elsif free_cell_to_cascade_move?(input)
+        parse_free_cell_to_cascade_move(input)
       elsif to_foundation_move?(input)
         parse_to_foundation_move(input)
       end
@@ -20,6 +22,10 @@ module Freecell
 
     def cascade_to_free_cell_move?(input)
       !(input =~ /[a-h]\ /).nil?
+    end
+
+    def free_cell_to_cascade_move?(input)
+      !(input =~ /[w-z][a-h]/).nil?
     end
 
     def to_foundation_move?(input)
@@ -37,6 +43,13 @@ module Freecell
       [:cascade_to_free_cell, source]
     end
 
+    def parse_free_cell_to_cascade_move(input)
+      source, dest = input.split('')
+      source = free_cell_to_i(source)
+      dest = cascade_to_i(dest)
+      [:free_cell_to_cascade_move, source, dest]
+    end
+
     def parse_to_foundation_move(input)
       source = cascade_to_i(input.split('').first)
       [:cascade_to_foundation, source]
@@ -47,6 +60,11 @@ module Freecell
     def cascade_to_i(char)
       ascii_a = 97
       char.bytes.first - ascii_a
+    end
+
+    def free_cell_to_i(char)
+      ascii_w = 119
+      char.bytes.first - ascii_w
     end
   end
 end

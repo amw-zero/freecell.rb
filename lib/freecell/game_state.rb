@@ -15,9 +15,11 @@ module Freecell
     def apply(move)
       case move[0]
       when :cascade_to_free_cell
-        perform_cascade_to_freecell_move(move)
+        perform_cascade_to_free_cell_move(move)
       when :cascade_to_foundation
         perform_cascade_to_foundation_move(move)
+      when :free_cell_to_cascade_move
+        perform_free_cell_to_cascade_move(move)
       when :cascade
         perform_cascade_move(move)
       end
@@ -50,15 +52,22 @@ module Freecell
     end
 
     def perform_cascade_move(move)
-      return unless legal_cascade_move?(move)
+      return unless legal_cascade_to_cascade_move?(move)
       _, source, dest = move
       @cascades[dest] << @cascades[source].pop
     end
 
-    def perform_cascade_to_freecell_move(move)
+    def perform_cascade_to_free_cell_move(move)
       return unless @free_cells.length < 4
       _, source = move
       @free_cells << @cascades[source].pop
+    end
+
+    def perform_free_cell_to_cascade_move(move)
+      _, source, dest = move
+      legal_move = legal_free_cell_to_cascade_move?(move)
+      return unless legal_move && !@free_cells[source].nil?
+      @cascades[dest] << @free_cells.delete_at(source)
     end
 
     def perform_cascade_to_foundation_move(move)
@@ -68,11 +77,22 @@ module Freecell
       @foundations[source_card.suit] << source_card
     end
 
-    def legal_cascade_move?(move)
+    def legal_cascade_to_cascade_move?(move)
       _, source, dest = move
       source_card = @cascades[source].last
       return true if @cascades[dest].empty?
       dest_card = @cascades[dest].last
+      legal_cascade_move?(source_card, dest_card)
+    end
+
+    def legal_free_cell_to_cascade_move?(move)
+      _, source, dest = move
+      source_card = @free_cells[source]
+      dest_card = @cascades[dest].last
+      legal_cascade_move?(source_card, dest_card)
+    end
+
+    def legal_cascade_move?(source_card, dest_card)
       one_less_than_dest = source_card.rank == dest_card.rank - 1
       one_less_than_dest && source_card.opposite_color?(dest_card)
     end
