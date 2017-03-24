@@ -1,5 +1,6 @@
 require 'curses'
 require_relative 'move_parser'
+require_relative 'input_state_machine.rb'
 
 module Freecell
   # Commandline UI
@@ -9,6 +10,7 @@ module Freecell
     def initialize
       @move_parser = MoveParser.new
       @curr_y = 0
+      input_sm = InputStateMachine.new
     end
 
     def setup
@@ -42,23 +44,19 @@ module Freecell
     end
 
     def parse_input
-      input = '' # !! reset this on invalid input
       loop do
-        input << Curses.getch
-        unless input_valid?(input)
-          input = ''
-          next
+        input = input_sm.handle_input(Curses.getch)
+        case input[:type]
+        when :move
+          move = @move_parser.parse_input(input)
+          break move if move
+        when :quit
+          exit
         end
-        move = @move_parser.parse_input(input)
-        break move if move
       end
     end
 
     private
-
-    def input_valid?(input)
-      !(input =~ /^[a-h]|[w-z]|\d/).nil?
-    end
 
     def reset_state
       @curr_y = 0
