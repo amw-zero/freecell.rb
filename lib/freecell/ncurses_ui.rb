@@ -57,7 +57,7 @@ module Freecell
     private
 
     def input_valid?(input)
-      !(input =~ /^[a-z]|[w-z]|\d/).nil?
+      !(input =~ /^[a-h]|[w-z]|\d/).nil?
     end
 
     def reset_state

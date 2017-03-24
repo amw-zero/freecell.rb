@@ -18,7 +18,9 @@ module Freecell
         perform_cascade_to_free_cell_move(move)
       when :cascade_to_foundation
         perform_cascade_to_foundation_move(move)
-      when :free_cell_to_cascade_move
+      when :free_cell_to_foundation
+        perform_free_cell_to_foundation_move(move)
+      when :free_cell_to_cascade
         perform_free_cell_to_cascade_move(move)
       when :cascade
         perform_cascade_move(move)
@@ -71,10 +73,17 @@ module Freecell
     end
 
     def perform_cascade_to_foundation_move(move)
-      return unless legal_foundation_move?(move)
       _, source = move
+      return unless legal_foundation_move?(@cascades[source].last)
       source_card = @cascades[source].pop
       @foundations[source_card.suit] << source_card
+    end
+
+    def perform_free_cell_to_foundation_move(move)
+      _, source = move
+      source_card = @free_cells[source]
+      return unless legal_foundation_move?(source_card)
+      @foundations[source_card.suit] << @free_cells.delete_at(source)
     end
 
     def legal_cascade_to_cascade_move?(move)
@@ -93,16 +102,27 @@ module Freecell
     end
 
     def legal_cascade_move?(source_card, dest_card)
+      return true if dest_card.nil?
       one_less_than_dest = source_card.rank == dest_card.rank - 1
       one_less_than_dest && source_card.opposite_color?(dest_card)
     end
 
-    def legal_foundation_move?(move)
+    def legal_cascade_to_foundation_move?(move)
       _, source = move
-      source_card = @cascades[source].last
+      legal_foundation_move?(@cascades[source].last)
+    end
+
+    def legal_free_cell_to_foundation_move?(move)
+      _, source = move
+      legal_foundation_move?(@free_cells[source])
+    end
+
+    def legal_foundation_move?(source_card)
+      return false if source_card.nil?
       return true if source_card.rank == 1
       return false if @foundations[source_card.suit].empty?
       foundation_card = @foundations[source_card.suit].last
+      return true if foundation_card.nil?
       source_card.rank == foundation_card.rank + 1
     end
   end
