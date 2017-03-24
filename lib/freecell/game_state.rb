@@ -102,6 +102,7 @@ module Freecell
     end
 
     def legal_cascade_move?(source_card, dest_card)
+      return true if dest_card.nil?
       one_less_than_dest = source_card.rank == dest_card.rank - 1
       one_less_than_dest && source_card.opposite_color?(dest_card)
     end
