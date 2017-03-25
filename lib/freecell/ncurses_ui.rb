@@ -1,5 +1,6 @@
 require 'curses'
 require_relative 'move_parser'
+require_relative 'input_state_machine.rb'
 
 module Freecell
   # Commandline UI
@@ -9,6 +10,7 @@ module Freecell
     def initialize
       @move_parser = MoveParser.new
       @curr_y = 0
+      @input_sm = InputStateMachine.new
     end
 
     def setup
@@ -36,29 +38,26 @@ module Freecell
       render_top_area(game_state)
       advance_y(by: 3)
       render_cascades(game_state, 4)
-
+      advance_y(by: 1)
+      render_bottom_area
       Curses.refresh
       reset_state
     end
 
     def parse_input
-      input = '' # !! reset this on invalid input
       loop do
-        input << Curses.getch
-        unless input_valid?(input)
-          input = ''
-          next
+        input_result = @input_sm.handle_ch(Curses.getch)
+        case input_result[:type]
+        when :move
+          move = @move_parser.parse_input(input_result[:input])
+          break move if move
+        when :quit
+          exit
         end
-        move = @move_parser.parse_input(input)
-        break move if move
       end
     end
 
     private
-
-    def input_valid?(input)
-      !(input =~ /^[a-h]|[w-z]|\d/).nil?
-    end
 
     def reset_state
       @curr_y = 0
@@ -74,6 +73,13 @@ module Freecell
       Curses.addstr('=)')
       Curses.setpos(@curr_y, 24)
       render_foundations(game_state)
+    end
+
+    def render_bottom_area
+      Curses.attron(black_card_color_pair)
+      Curses.addstr('q')
+      Curses.attroff(black_card_color_pair)
+      Curses.addstr('uit')
     end
 
     def render_free_cells(game_state)
@@ -97,7 +103,7 @@ module Freecell
     end
 
     def render_cascades(game_state, start_y)
-      game_state.printable_card_grid.each_with_index do |row, i|
+      game_state.printable_card_grid.each do |row|
         Curses.addstr('   ')
         row.each do |card|
           draw_card(card)
