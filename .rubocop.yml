@@ -1,3 +1,12 @@
+AllCops:
+  Exclude:
+    - 'Gemfile'
+    - 'Rakefile'
+    - 'spec/spec_helper.rb'
+    - 'bin/console'
+    - 'bin/setup'
+    - 'freecell.gemspec'
+
 Metrics/BlockLength:
   Exclude:
     - 'lib/freecell/input_state_machine.rb'
