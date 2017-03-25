@@ -103,7 +103,7 @@ module Freecell
     end
 
     def render_cascades(game_state)
-      game_state.printable_card_grid.each do |row|
+      printable_card_grid(game_state).each do |row|
         Curses.addstr('   ')
         row.each { |card| draw_card(card) }
         advance_y(by: 1)
@@ -113,6 +113,13 @@ module Freecell
       game_state.cascades.length.times do |i|
         Curses.addstr("#{i_to_cascade_letter(i)}    ")
       end
+    end
+
+    def printable_card_grid(game_state)
+      max_length = game_state.cascades.map(&:length).max
+      game_state.cascades.map do |c|
+        c + (0...max_length - c.count).map { '   ' }
+      end.transpose
     end
 
     def i_to_free_cell_letter(i)

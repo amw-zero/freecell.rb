@@ -6,8 +6,8 @@ module Freecell
   class GameState
     attr_reader :cascades, :free_cells, :foundations
 
-    def initialize
-      @cascades = partition_cascades(Deck.new)
+    def initialize(deck = nil)
+      @cascades = partition_cascades(deck || Deck.new.shuffle)
       @free_cells = []
       @foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
     end
@@ -26,13 +26,6 @@ module Freecell
         perform_cascade_move(move)
       end
       self
-    end
-
-    def printable_card_grid
-      max_length = @cascades.map(&:length).max
-      @cascades.map do |c|
-        c + (0...max_length - c.count).map { '   ' }
-      end.transpose
     end
 
     private

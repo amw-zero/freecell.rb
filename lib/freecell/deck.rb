@@ -10,7 +10,12 @@ module Freecell
     def initialize
       @cards = (1..(SIZE / 4)).to_a.product(Card::SUITS).map do |rank, suit|
         Card.new(rank, suit)
-      end.shuffle
+      end
+    end
+
+    def shuffle
+      @cards.shuffle!
+      self
     end
   end
 end
