@@ -9,7 +9,6 @@ module Freecell
     end
 
     state_machine :state, initial: :empty do
-
       event :receive_number do
         transition empty: :number
         transition all - :empty => :empty
