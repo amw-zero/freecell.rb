@@ -38,7 +38,8 @@ module Freecell
       render_top_area(game_state)
       advance_y(by: 3)
       render_cascades(game_state, 4)
-
+      advance_y(by: 1)
+      render_bottom_area
       Curses.refresh
       reset_state
     end
@@ -72,6 +73,13 @@ module Freecell
       Curses.addstr('=)')
       Curses.setpos(@curr_y, 24)
       render_foundations(game_state)
+    end
+
+    def render_bottom_area
+      Curses.attron(black_card_color_pair)
+      Curses.addstr('q')
+      Curses.attroff(black_card_color_pair)
+      Curses.addstr('uit')
     end
 
     def render_free_cells(game_state)
