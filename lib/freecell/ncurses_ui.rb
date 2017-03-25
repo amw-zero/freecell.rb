@@ -95,7 +95,7 @@ module Freecell
     end
 
     def render_cascades(game_state, start_y)
-      game_state.printable_card_grid.each_with_index do |row, i|
+      game_state.printable_card_grid.each do |row|
         Curses.addstr('   ')
         row.each do |card|
           draw_card(card)

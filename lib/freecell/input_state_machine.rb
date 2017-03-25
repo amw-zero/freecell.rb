@@ -133,7 +133,7 @@ module Freecell
     end
 
     def free_cell_letter?(ch)
-      !(ch =~ /^[a-h]/).nil?
+      !(ch =~ /[w-z]/).nil?
     end
 
     def cascade_letter?(ch)
