@@ -37,7 +37,7 @@ module Freecell
       Curses.clear
       render_top_area(game_state)
       advance_y(by: 3)
-      render_cascades(game_state, 4)
+      render_cascades(game_state)
       advance_y(by: 1)
       render_bottom_area
       Curses.refresh
@@ -102,12 +102,10 @@ module Freecell
       end
     end
 
-    def render_cascades(game_state, start_y)
+    def render_cascades(game_state)
       game_state.printable_card_grid.each do |row|
         Curses.addstr('   ')
-        row.each do |card|
-          draw_card(card)
-        end
+        row.each { |card| draw_card(card) }
         advance_y(by: 1)
       end
       advance_y(by: 1)
@@ -118,7 +116,7 @@ module Freecell
     end
 
     def i_to_free_cell_letter(i)
-      ['w', 'x', 'y', 'z'][i]
+      %w(w x y z)[i]
     end
 
     def i_to_cascade_letter(i)
@@ -127,16 +125,16 @@ module Freecell
     end
 
     def draw_card(card)
-      with_black_card_coloring(card) do |card|
-        Curses.addstr(card.to_s)
+      with_black_card_coloring(card) do |c|
+        Curses.addstr(c.to_s)
       end
       Curses.addstr('  ')
     end
 
     def draw_card_with_border(card)
       Curses.addstr('[')
-      with_black_card_coloring(card) do |card|
-        Curses.addstr(card.to_s)
+      with_black_card_coloring(card) do |c|
+        Curses.addstr(c.to_s)
       end
       Curses.addstr(']')
     end
