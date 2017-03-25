@@ -44,7 +44,7 @@ module Freecell
           destination_char?(ch)
         end
 
-        def transition_event(ch) end
+        def transition_event(*) end
 
         def terminal_length
           2
@@ -56,7 +56,7 @@ module Freecell
           destination_char?(ch)
         end
 
-        def transition_event(ch)
+        def transition_event(*)
           :receive_letter
         end
 
@@ -70,12 +70,11 @@ module Freecell
           free_cell_letter?(ch)
         end
 
-        def transition_event(ch)
+        def transition_event(*)
           :receive_letter
         end
 
-        def terminal_length
-        end
+        def terminal_length; end
       end
     end
 
@@ -85,43 +84,27 @@ module Freecell
     def handle_ch(ch)
       if receivable?(ch)
         @input << ch
-        event = transition_event(ch)
-        send(event) if event
-        if @input.length == terminal_length
-          ret = { type: :move, input: @input }
-          reset
-          ret
-        else
-          {}
-        end
+        send(transition_event(ch)) if transition_event(ch)
+        check_input_length
       elsif quit?(ch)
         { type: :quit }
       else
         reset
         {}
       end
-      # if free_cell_or_cascade_letter?(ch)
-      #   @input << ch
-      #   receive_letter
-      #   if @input.length == terminal_length
-      #     ret = { type: :move, input: @input }
-      #     reset
-      #     return ret
-      #   end
-      #   {}
-      # elsif number?(ch)
-      #   @input << ch
-      #   receive_number
-      #   {}
-      # elsif quit?(ch)
-      #   { type: :quit }
-      # else
-      #   reset
-      #   {}
-      # end
     end
 
     private
+
+    def check_input_length
+      if @input.length == terminal_length
+        ret = { type: :move, input: @input }
+        reset
+        ret
+      else
+        {}
+      end
+    end
 
     def reset_input
       @input = ''
