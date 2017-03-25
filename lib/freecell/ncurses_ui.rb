@@ -10,7 +10,7 @@ module Freecell
     def initialize
       @move_parser = MoveParser.new
       @curr_y = 0
-      input_sm = InputStateMachine.new
+      @input_sm = InputStateMachine.new
     end
 
     def setup
@@ -45,10 +45,10 @@ module Freecell
 
     def parse_input
       loop do
-        input = input_sm.handle_input(Curses.getch)
-        case input[:type]
+        input_result = @input_sm.handle_ch(Curses.getch)
+        case input_result[:type]
         when :move
-          move = @move_parser.parse_input(input)
+          move = @move_parser.parse_input(input_result[:input])
           break move if move
         when :quit
           exit
