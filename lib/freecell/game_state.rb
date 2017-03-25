@@ -9,7 +9,7 @@ module Freecell
     def initialize
       @cascades = partition_cascades(Deck.new)
       @free_cells = []
-      @foundations = make_foundations
+      @foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
     end
 
     def apply(move)
@@ -36,15 +36,6 @@ module Freecell
     end
 
     private
-
-    def make_foundations
-      {
-        hearts: [],
-        diamonds: [],
-        spades: [],
-        clubs: []
-      }
-    end
 
     def partition_cascades(deck)
       full_cascade_cards, short_cascade_cards = deck.cards.each_slice(28).to_a
