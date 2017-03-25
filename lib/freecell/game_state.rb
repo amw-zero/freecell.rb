@@ -6,10 +6,11 @@ module Freecell
   class GameState
     attr_reader :cascades, :free_cells, :foundations
 
-    def initialize(deck = nil)
-      @cascades = partition_cascades(deck || Deck.new.shuffle)
-      @free_cells = []
-      @foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
+    def initialize(cascades = nil, free_cells = nil, foundations = nil)
+      @cascades = cascades || partition_cascades(Deck.new.shuffle)
+      @free_cells = free_cells || []
+      empty_foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
+      @foundations = foundations || empty_foundations
     end
 
     def apply(move)
