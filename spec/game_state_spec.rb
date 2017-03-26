@@ -78,5 +78,39 @@ describe Freecell::GameState do
         expect_card(subject[3], 3, :hearts)
       end
     end
+
+    context 'when moving to foundations' do
+      let(:game_state) do
+        cascades = [
+          [h4],
+          [s3]
+        ]
+        foundations = {
+          hearts: [h3], diamonds: [],
+          clubs: [], spades: [s1]
+        }
+        Freecell::GameState.new(cascades, nil, foundations)
+      end
+
+      before do
+        game_state.apply([:cascade_to_foundation, 0])
+        game_state.apply([:cascade_to_foundation, 1])
+      end
+
+      subject do
+        game_state.foundations
+      end
+
+      it 'applies legal moves' do
+        expect(game_state.cascades[0].count).to eq(0)
+        expect(subject[:hearts].count).to eq(2)
+        expect_card(subject[:hearts].last, 4, :hearts)
+      end
+
+      it 'doesn\'t apply illegal moves' do
+        expect(game_state.cascades[1].count).to eq(1)
+        expect(subject[:spades].count).to eq(1)
+      end
+    end
   end
 end
