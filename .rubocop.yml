@@ -10,3 +10,4 @@ AllCops:
 Metrics/BlockLength:
   Exclude:
     - 'lib/freecell/input_state_machine.rb'
+    - 'spec/**/*.rb'
