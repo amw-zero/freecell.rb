@@ -79,7 +79,7 @@ describe Freecell::GameState do
       end
     end
 
-    context 'when moving to foundations' do
+    context 'when moving to foundations from cascades' do
       let(:game_state) do
         cascades = [
           [h4],
@@ -110,6 +110,50 @@ describe Freecell::GameState do
       it 'doesn\'t apply illegal moves' do
         expect(game_state.cascades[1].count).to eq(1)
         expect(subject[:spades].count).to eq(1)
+      end
+    end
+
+    context 'when moving to foundations from free cells' do
+      let(:game_state) do
+        free_cells = [h2, s2]
+        foundations = {
+          hearts: [h1],
+          spades: []
+        }
+        Freecell::GameState.new(nil, free_cells, foundations)
+      end
+
+      before do
+        game_state.apply([:free_cell_to_foundation, 0])
+        game_state.apply([:free_cell_to_foundation, 0])
+      end
+
+      it 'moves a valid card to its foundation' do
+        expect(game_state.foundations[:hearts].count).to eq(2)
+        expect_card(game_state.foundations[:hearts].last, 2, :hearts)
+      end
+
+      it 'doesn\t move an invalid card' do
+        expect(game_state.foundations[:spades].count).to eq(0)
+      end
+    end
+
+    context 'when moving to cascades from free cells' do
+      let(:game_state) do
+        free_cells = [h2]
+        cascades = [
+          [s3]
+        ]
+        Freecell::GameState.new(cascades, free_cells)
+      end
+
+      before do
+        game_state.apply([:free_cell_to_cascade, 0, 0])
+      end
+
+      it 'moves the card to the cascade' do
+        expect(game_state.cascades[0].count).to eq(2)
+        expect_card(game_state.cascades[0].last, 2, :hearts)
       end
     end
   end
