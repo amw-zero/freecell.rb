@@ -1,117 +1,18 @@
 require 'state_machine'
 
 module Freecell
-  # Parse commandline input in a structured way
-  class InputStateMachine
-    def initialize
-      @input = ''
-      super
-    end
 
-    state_machine :state, initial: :empty do
-      event :receive_number do
-        transition empty: :number
-        transition all - :empty => :empty
-      end
-
-      event :receive_letter do
-        transition empty: :one_letter,
-                   number: :number_one_letter
-      end
-
-      event :reset do
-        transition all => :empty
-      end
-
-      after_transition any => :empty, do: :reset_input
-
-      state :empty do
-        def receivable?(ch)
-          number?(ch) || free_cell_letter?(ch) || cascade_letter?(ch)
-        end
-
-        def transition_event(ch)
-          if number?(ch)
-            :receive_number
-          elsif free_cell_letter?(ch) || cascade_letter?(ch)
-            :receive_letter
-          end
-        end
-      end
-
-      state :one_letter do
-        def receivable?(ch)
-          destination_char?(ch)
-        end
-
-        def transition_event(*) end
-
-        def terminal_length
-          2
-        end
-      end
-
-      state :number_one_letter do
-        def receivable?(ch)
-          destination_char?(ch)
-        end
-
-        def transition_event(*)
-          :receive_letter
-        end
-
-        def terminal_length
-          3
-        end
-      end
-
-      state :number do
-        def receivable?(ch)
-          free_cell_letter?(ch)
-        end
-
-        def transition_event(*)
-          :receive_letter
-        end
-
-        def terminal_length; end
-      end
-    end
-
-    # { type: :move, input: @input}
-    # { type: :quit }
-    # { type: :continue }
-    def handle_ch(ch)
-      if receivable?(ch)
-        @input << ch
-        send(transition_event(ch)) if transition_event(ch)
-        check_input_length
-      elsif quit?(ch)
-        { type: :quit }
-      else
-        reset
-        {}
-      end
-    end
-
-    private
-
-    def check_input_length
-      if @input.length == terminal_length
-        ret = { type: :move, input: @input }
-        reset
-        ret
-      else
-        {}
-      end
-    end
-
-    def reset_input
-      @input = ''
-    end
+  class CharacterParser
+    CARRIAGE_RETURN_BYTE = 13
+    ASCII_LOWERCASE_A = 97
+    ASCII_LOWERCASE_W = 119
 
     def quit?(ch)
       ch == 'q'
+    end
+
+    def free_cell_dest_letter?(ch)
+      ch == ' '
     end
 
     def free_cell_letter?(ch)
@@ -122,13 +23,134 @@ module Freecell
       !(ch =~ /[a-h]/).nil?
     end
 
-    def destination_char?(ch)
-      carriage_return_byte = 13
-      !(ch =~ /\ |[a-h]/).nil? || ch == carriage_return_byte
+    def foundation_char?(ch)
+      ch == CARRIAGE_RETURN_BYTE
     end
 
     def number?(ch)
       !(ch =~ /[2-9]/).nil?
+    end
+
+    def cascade_to_i(ch)
+      ch.bytes.first - ASCII_LOWERCASE_A
+    end
+
+    def free_cell_to_i(char)
+      char.bytes.first - ASCII_LOWERCASE_W
+    end
+  end
+
+  # Parse commandline input in a structured way
+  class InputStateMachine
+    attr_reader :source_index, :dest_index, :num_cards
+
+    def initialize
+      @source_index = 0
+      @dest_index = 0
+      @num_cards = 0
+      @parser = CharacterParser.new
+      super
+    end
+
+    state_machine :state, initial: :empty do
+      event :receive_number do
+        transition empty: :number
+        transition all - :empty => :empty
+      end
+
+      event :receive_cascade_letter do
+        transition empty: :cascade_letter,
+                   number: :number_cascade_letter
+      end
+
+      event :receive_free_cell_letter do
+        transition empty: :free_cell_letter
+      end
+
+      event :reset do
+        transition all => :empty
+      end
+
+      after_transition any => :empty, do: :reset_state
+
+      state :empty do
+        def receive_ch(ch)
+          if @parser.number?(ch)
+            @num_cards = ch.to_i
+            [nil, :receive_number]
+          elsif @parser.free_cell_letter?(ch)
+            @source_index = @parser.free_cell_to_i(ch)
+            [nil, :receive_free_cell_letter]
+          elsif @parser.cascade_letter?(ch)
+            @source_index = @parser.cascade_to_i(ch)
+            [nil, :receive_cascade_letter]
+          else
+            [nil, :reset]
+          end
+        end
+      end
+
+      state :cascade_letter do
+        def receive_ch(ch)
+          if @parser.cascade_letter?(ch)
+            move = [:cascade_to_cascade, @source_index, @parser.cascade_to_i(ch)]
+            [move, :reset]
+          elsif @parser.foundation_char?(ch)
+            move = [:cascade_to_foundation, @source_index]
+            [move, :reset]
+          elsif @parser.free_cell_dest_letter?(ch)
+            move = [:cascade_to_free_cell, @source_index]
+            [move, :reset]
+          else
+            [nil, :reset]
+          end
+        end
+      end
+
+      state :free_cell_letter do
+        def receive_ch(ch)
+          if @parser.cascade_letter?(ch)
+            move = [:free_cell_to_cascade, @source_index, @parser.cascade_to_i(ch)]
+            [move, :reset]
+          elsif @parser.foundation_char?(ch)
+            move = [:free_cell_to_foundation, @source_index]
+            [move, :reset]
+          else
+            [nil, :reset]
+          end
+        end
+      end
+
+      state :number do
+        def receive(ch)
+        end
+      end
+
+      state :number_cascade_letter do
+        def receive_ch(ch)
+        end
+      end
+    end
+
+    # { type: :move, value: @input}
+    # { type: :quit }
+    def handle_ch(ch)
+      return { type: :quit } if @parser.quit?(ch)
+      value, next_state_event = receive_ch(ch)
+      send(next_state_event)
+      if value
+        { type: :move, value: value }
+      else
+        {}
+      end
+    end
+
+    private
+
+    def reset_state
+      @source_index = nil
+      @dest_index = nil
+      @num_cards = 0
     end
   end
 end

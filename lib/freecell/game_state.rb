@@ -23,8 +23,10 @@ module Freecell
         perform_free_cell_to_foundation_move(move)
       when :free_cell_to_cascade
         perform_free_cell_to_cascade_move(move)
-      when :cascade
+      when :cascade_to_cascade
         perform_cascade_move(move)
+      when :multi_card_cascade
+        perform_multi_card_cascade_move(move)
       end
       self
     end

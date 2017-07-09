@@ -49,8 +49,7 @@ module Freecell
         input_result = @input_sm.handle_ch(Curses.getch)
         case input_result[:type]
         when :move
-          move = @move_parser.parse_input(input_result[:input])
-          break move if move
+          break input_result[:value]
         when :quit
           exit
         end
