@@ -1,5 +1,4 @@
 require 'curses'
-require_relative 'move_parser'
 require_relative 'input_state_machine.rb'
 
 module Freecell
@@ -8,7 +7,6 @@ module Freecell
     BLACK_CARD_COLOR_PAIR_ID = 1
 
     def initialize
-      @move_parser = MoveParser.new
       @curr_y = 0
       @input_sm = InputStateMachine.new
     end
@@ -49,8 +47,7 @@ module Freecell
         input_result = @input_sm.handle_ch(Curses.getch)
         case input_result[:type]
         when :move
-          move = @move_parser.parse_input(input_result[:input])
-          break move if move
+          break input_result[:value]
         when :quit
           exit
         end

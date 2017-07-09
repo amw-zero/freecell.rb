@@ -35,7 +35,7 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade, 0, 1])
+        game_state.apply([:cascade_to_cascade, 0, 1])
       end
 
       subject do
