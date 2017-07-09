@@ -1,5 +1,4 @@
 require 'curses'
-require_relative 'move_parser'
 require_relative 'input_state_machine.rb'
 
 module Freecell
@@ -8,7 +7,6 @@ module Freecell
     BLACK_CARD_COLOR_PAIR_ID = 1
 
     def initialize
-      @move_parser = MoveParser.new
       @curr_y = 0
       @input_sm = InputStateMachine.new
     end
