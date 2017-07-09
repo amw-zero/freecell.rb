@@ -1,6 +1,21 @@
 require 'state_machine'
 
 module Freecell
+  class InputResult
+    attr_reader :
+    def initialize
+    end
+  end
+  class GameMove
+    attr_reader :type, :source_index, :dest_index, :num_cards
+
+    def initialize(type:, source_index:, dest_index: nil, num_cards: 0)
+      @type = type
+      @source_index = source_index
+      @dest_index = dest_index
+      @num_cards = num_cards
+    end
+  end
 
   class CharacterParser
     CARRIAGE_RETURN_BYTE = 13
@@ -38,7 +53,7 @@ module Freecell
     def free_cell_to_i(char)
       char.bytes.first - ASCII_LOWERCASE_W
     end
-  end
+v  end
 
   # Parse commandline input in a structured way
   class InputStateMachine
@@ -80,10 +95,12 @@ module Freecell
             [nil, :receive_number]
           elsif @parser.free_cell_letter?(ch)
             @source_index = @parser.free_cell_to_i(ch)
-            [nil, :receive_free_cell_letter]
+            value = { type: :selection, value: { free_cell: @source_index } }
+            [value, :receive_free_cell_letter]
           elsif @parser.cascade_letter?(ch)
+            value = { type: :selection, value: { cascade: @source_index } }
             @source_index = @parser.cascade_to_i(ch)
-            [nil, :receive_cascade_letter]
+            [value, :receive_cascade_letter]
           else
             [nil, :reset]
           end
@@ -93,14 +110,24 @@ module Freecell
       state :cascade_letter do
         def receive_ch(ch)
           if @parser.cascade_letter?(ch)
-            move = [:cascade_to_cascade, @source_index, @parser.cascade_to_i(ch)]
-            [move, :reset]
+            move = GameMove.new(
+              type: :cascade_to_cascade,
+              source_index: @source_index,
+              dest_index: @parser.cascade_to_i(ch)
+            )
+            [{ type: :move, value: move }, :reset]
           elsif @parser.foundation_char?(ch)
-            move = [:cascade_to_foundation, @source_index]
-            [move, :reset]
+            move = GameMove.new(
+              type: :cascade_to_foundation,
+              source_index: @source_index
+            )
+            [{ type: :move, value: move}, :reset]
           elsif @parser.free_cell_dest_letter?(ch)
-            move = [:cascade_to_free_cell, @source_index]
-            [move, :reset]
+            move = GameMove.new(
+              type: :cascade_to_free_cell,
+              source_index: @source_index
+            )
+            [{ type: :move, value: move }, :reset]
           else
             [nil, :reset]
           end
@@ -110,11 +137,18 @@ module Freecell
       state :free_cell_letter do
         def receive_ch(ch)
           if @parser.cascade_letter?(ch)
-            move = [:free_cell_to_cascade, @source_index, @parser.cascade_to_i(ch)]
-            [move, :reset]
+            move = GameMove.new(
+              type: :free_cell_to_cascade,
+              source_index: @source_index,
+              dest_index: @parser.cascade_to_i(ch)
+            )
+            [{ type: :move, value: move }, :reset]
           elsif @parser.foundation_char?(ch)
-            move = [:free_cell_to_foundation, @source_index]
-            [move, :reset]
+            move = GameMove.new(
+              type: :free_cell_to_foundation,
+              source_index: @source_index
+            )
+            [{ type: :move, value: move }, :reset]
           else
             [nil, :reset]
           end
@@ -138,11 +172,7 @@ module Freecell
       return { type: :quit } if @parser.quit?(ch)
       value, next_state_event = receive_ch(ch)
       send(next_state_event)
-      if value
-        { type: :move, value: value }
-      else
-        {}
-      end
+      value || {}
     end
 
     private

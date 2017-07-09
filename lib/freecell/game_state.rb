@@ -11,10 +11,11 @@ module Freecell
       @free_cells = free_cells || []
       empty_foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
       @foundations = foundations || empty_foundations
+      @selected_card = nil
     end
 
     def apply(move)
-      case move[0]
+      case move.type
       when :cascade_to_free_cell
         perform_cascade_to_free_cell_move(move)
       when :cascade_to_foundation
@@ -42,49 +43,42 @@ module Freecell
 
     def perform_cascade_move(move)
       return unless legal_cascade_to_cascade_move?(move)
-      _, source, dest = move
-      @cascades[dest] << @cascades[source].pop
+      @cascades[move.dest_index] << @cascades[move.source_index].pop
     end
 
     def perform_cascade_to_free_cell_move(move)
       return unless @free_cells.length < 4
-      _, source = move
-      @free_cells << @cascades[source].pop
+      @free_cells << @cascades[move.source_index].pop
     end
 
     def perform_free_cell_to_cascade_move(move)
-      _, source, dest = move
       legal_move = legal_free_cell_to_cascade_move?(move)
-      return unless legal_move && !@free_cells[source].nil?
-      @cascades[dest] << @free_cells.delete_at(source)
+      return unless legal_move && !@free_cells[move.source_index].nil?
+      @cascades[move.dest_index] << @free_cells.delete_at(move.source_index)
     end
 
     def perform_cascade_to_foundation_move(move)
-      _, source = move
-      return unless legal_foundation_move?(@cascades[source].last)
-      source_card = @cascades[source].pop
+      return unless legal_foundation_move?(@cascades[move.source_index].last)
+      source_card = @cascades[move.source_index].pop
       @foundations[source_card.suit] << source_card
     end
 
     def perform_free_cell_to_foundation_move(move)
-      _, source = move
-      source_card = @free_cells[source]
+      source_card = @free_cells[move.source_index]
       return unless legal_foundation_move?(source_card)
-      @foundations[source_card.suit] << @free_cells.delete_at(source)
+      @foundations[source_card.suit] << @free_cells.delete_at(move.source_index)
     end
 
     def legal_cascade_to_cascade_move?(move)
-      _, source, dest = move
-      source_card = @cascades[source].last
-      return true if @cascades[dest].empty?
-      dest_card = @cascades[dest].last
+      source_card = @cascades[move.source_index].last
+      return true if @cascades[move.dest_index].empty?
+      dest_card = @cascades[move.dest_index].last
       legal_cascade_move?(source_card, dest_card)
     end
 
     def legal_free_cell_to_cascade_move?(move)
-      _, source, dest = move
-      source_card = @free_cells[source]
-      dest_card = @cascades[dest].last
+      source_card = @free_cells[move.source_index]
+      dest_card = @cascades[move.dest_index].last
       legal_cascade_move?(source_card, dest_card)
     end
 
@@ -95,13 +89,11 @@ module Freecell
     end
 
     def legal_cascade_to_foundation_move?(move)
-      _, source = move
-      legal_foundation_move?(@cascades[source].last)
+      legal_foundation_move?(@cascades[move.source_index].last)
     end
 
     def legal_free_cell_to_foundation_move?(move)
-      _, source = move
-      legal_foundation_move?(@free_cells[source])
+      legal_foundation_move?(@free_cells[move.source_index])
     end
 
     def legal_foundation_move?(source_card)

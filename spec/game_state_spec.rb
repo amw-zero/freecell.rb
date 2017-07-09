@@ -35,7 +35,12 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_cascade, 0, 1])
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_cascade,
+          source_index: 0,
+          dest_index: 1
+        )
+        game_state.apply(cmd)
       end
 
       subject do
@@ -58,11 +63,15 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_free_cell,
+          source_index: 0
+        )
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
       end
 
       subject do
@@ -93,8 +102,16 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_foundation, 0])
-        game_state.apply([:cascade_to_foundation, 1])
+        cmd1 = Freecell::GameStateCommand.new(
+          type: :cascade_to_foundation,
+          source_index: 0
+        )
+        cmd2 = Freecell::GameStateCommand.new(
+          type: :cascade_to_foundation,
+          source_index: 1
+        )
+        game_state.apply(cmd1)
+        game_state.apply(cmd2)
       end
 
       subject do
@@ -124,8 +141,12 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:free_cell_to_foundation, 0])
-        game_state.apply([:free_cell_to_foundation, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_foundation,
+          source_index: 0
+        )
+        game_state.apply(cmd)
+        game_state.apply(cmd)
       end
 
       it 'moves a valid card to its foundation' do
@@ -148,7 +169,12 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:free_cell_to_cascade, 0, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_cascade,
+          source_index: 0,
+          dest_index: 0
+        )
+        game_state.apply(cmd)
       end
 
       it 'moves the card to the cascade' do
