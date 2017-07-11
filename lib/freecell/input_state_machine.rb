@@ -1,19 +1,18 @@
 require 'state_machine'
 
 module Freecell
-  class InputResult
-    attr_reader :
-    def initialize
-    end
-  end
-  class GameMove
+  class GameStateCommand
     attr_reader :type, :source_index, :dest_index, :num_cards
 
-    def initialize(type:, source_index:, dest_index: nil, num_cards: 0)
+    def initialize(type:, source_index: nil, dest_index: nil, num_cards: 1)
       @type = type
       @source_index = source_index
       @dest_index = dest_index
       @num_cards = num_cards
+    end
+
+    def ==(rhs)
+      %i(type source_index dest_index num_cards).all? { |v| self.send(v) == rhs.send(v) }
     end
   end
 
@@ -53,7 +52,7 @@ module Freecell
     def free_cell_to_i(char)
       char.bytes.first - ASCII_LOWERCASE_W
     end
-v  end
+  end
 
   # Parse commandline input in a structured way
   class InputStateMachine
@@ -64,6 +63,7 @@ v  end
       @dest_index = 0
       @num_cards = 0
       @parser = CharacterParser.new
+      @next_state_event = nil
       super
     end
 
@@ -92,87 +92,60 @@ v  end
         def receive_ch(ch)
           if @parser.number?(ch)
             @num_cards = ch.to_i
-            [nil, :receive_number]
+            @next_state_event = :receive_number
           elsif @parser.free_cell_letter?(ch)
             @source_index = @parser.free_cell_to_i(ch)
-            value = { type: :selection, value: { free_cell: @source_index } }
-            [value, :receive_free_cell_letter]
+            @next_state_event = :receive_free_cell_letter
+            selected_free_cell_result
           elsif @parser.cascade_letter?(ch)
-            value = { type: :selection, value: { cascade: @source_index } }
             @source_index = @parser.cascade_to_i(ch)
-            [value, :receive_cascade_letter]
+            @next_state_event = :receive_cascade_letter
+            selected_cascade_result
           else
-            [nil, :reset]
+            @next_state_event = :reset
+            reset_result
           end
         end
       end
 
       state :cascade_letter do
         def receive_ch(ch)
+          @next_state_event = :reset
           if @parser.cascade_letter?(ch)
-            move = GameMove.new(
-              type: :cascade_to_cascade,
-              source_index: @source_index,
-              dest_index: @parser.cascade_to_i(ch)
-            )
-            [{ type: :move, value: move }, :reset]
+            cascade_to_cascade_result(ch)
           elsif @parser.foundation_char?(ch)
-            move = GameMove.new(
-              type: :cascade_to_foundation,
-              source_index: @source_index
-            )
-            [{ type: :move, value: move}, :reset]
+            cascade_to_foundation_result
           elsif @parser.free_cell_dest_letter?(ch)
-            move = GameMove.new(
-              type: :cascade_to_free_cell,
-              source_index: @source_index
-            )
-            [{ type: :move, value: move }, :reset]
+            cascade_to_free_cell_result
           else
-            [nil, :reset]
+            reset_result
           end
         end
       end
 
       state :free_cell_letter do
         def receive_ch(ch)
+          @next_state_event = :reset
           if @parser.cascade_letter?(ch)
-            move = GameMove.new(
-              type: :free_cell_to_cascade,
-              source_index: @source_index,
-              dest_index: @parser.cascade_to_i(ch)
-            )
-            [{ type: :move, value: move }, :reset]
+            free_cell_to_cascade_result(ch)
           elsif @parser.foundation_char?(ch)
-            move = GameMove.new(
-              type: :free_cell_to_foundation,
-              source_index: @source_index
-            )
-            [{ type: :move, value: move }, :reset]
+            free_cell_to_foundation_result
           else
-            [nil, :reset]
+            reset_result
           end
         end
       end
 
       state :number do
-        def receive(ch)
-        end
-      end
-
-      state :number_cascade_letter do
-        def receive_ch(ch)
-        end
+        def receive(ch); end
       end
     end
 
-    # { type: :move, value: @input}
-    # { type: :quit }
     def handle_ch(ch)
-      return { type: :quit } if @parser.quit?(ch)
-      value, next_state_event = receive_ch(ch)
-      send(next_state_event)
-      value || {}
+      return GameStateCommand.new(type: :quit) if @parser.quit?(ch)
+      command = receive_ch(ch)
+      send(@next_state_event)
+      command || nil
     end
 
     private
@@ -181,6 +154,63 @@ v  end
       @source_index = nil
       @dest_index = nil
       @num_cards = 0
+    end
+
+    def cascade_to_cascade_result(ch)
+      GameStateCommand.new(
+        type: :cascade_to_cascade,
+        source_index: @source_index,
+        dest_index: @parser.cascade_to_i(ch)
+      )
+    end
+
+    def cascade_to_foundation_result
+      GameStateCommand.new(
+        type: :cascade_to_foundation,
+        source_index: @source_index
+      )
+    end
+
+    def cascade_to_free_cell_result
+      GameStateCommand.new(
+        type: :cascade_to_free_cell,
+        source_index: @source_index
+      )
+    end
+
+    def free_cell_to_cascade_result(ch)
+      GameStateCommand.new(
+        type: :free_cell_to_cascade,
+        source_index: @source_index,
+        dest_index: @parser.cascade_to_i(ch)
+      )
+    end
+
+    def free_cell_to_foundation_result
+      GameStateCommand.new(
+        type: :free_cell_to_foundation,
+        source_index: @source_index
+      )
+    end
+
+    def selected_free_cell_result
+      GameStateCommand.new(
+        type: :free_cell_selection,
+        source_index: @source_index
+      )
+    end
+
+    def selected_cascade_result
+      GameStateCommand.new(
+        type: :cascade_selection,
+        source_index: @source_index
+      )
+    end
+
+    def reset_result
+      GameStateCommand.new(
+        type: :state_reset
+      )
     end
   end
 end

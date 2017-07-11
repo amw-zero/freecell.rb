@@ -5,6 +5,8 @@ module Freecell
   # Commandline UI
   class NCursesUI
     BLACK_CARD_COLOR_PAIR_ID = 1
+    SELECTED_BLACK_CARD_COLOR_PAIR_ID = 2
+    SELECTED_RED_CARD_COLOR_PAIR_ID = 3
 
     def initialize
       @curr_y = 0
@@ -29,6 +31,16 @@ module Freecell
         Curses::COLOR_CYAN,
         Curses::COLOR_BLACK
       )
+      Curses.init_pair(
+        SELECTED_BLACK_CARD_COLOR_PAIR_ID,
+        Curses::COLOR_CYAN,
+        Curses::COLOR_BLUE
+      )
+      Curses.init_pair(
+        SELECTED_RED_CARD_COLOR_PAIR_ID,
+        Curses::COLOR_WHITE,
+        Curses::COLOR_BLUE
+      )
     end
 
     def render(game_state)
@@ -43,14 +55,13 @@ module Freecell
     end
 
     def parse_input
-      loop do
-        input_result = @input_sm.handle_ch(Curses.getch)
-        case input_result[:type]
-        when :move
-          break input_result[:value]
-        when :quit
-          exit
-        end
+      command = @input_sm.handle_ch(Curses.getch)
+      return unless command
+      case command.type
+      when :quit
+        exit
+      else
+        command
       end
     end
 
@@ -81,7 +92,7 @@ module Freecell
 
     def render_free_cells(game_state)
       game_state.free_cells.each do |card|
-        draw_card_with_border(card)
+        draw_card_with_border(card, game_state.selected_card)
       end
       (4 - game_state.free_cells.count).times do
         Curses.addstr('[   ]')
@@ -95,14 +106,14 @@ module Freecell
     def render_foundations(game_state)
       [:diamonds, :hearts, :spades, :clubs].each do |suit|
         card = game_state.foundations[suit].last || '   '
-        draw_card_with_border(card)
+        draw_card_with_border(card, game_state.selected_card)
       end
     end
 
     def render_cascades(game_state)
       printable_card_grid(game_state).each do |row|
         Curses.addstr('   ')
-        row.each { |card| draw_card(card) }
+        row.each { |card| draw_card(card, game_state.selected_card) }
         advance_y(by: 1)
       end
       advance_y(by: 1)
@@ -128,16 +139,16 @@ module Freecell
       [i + ascii_a].pack('c*')
     end
 
-    def draw_card(card)
-      with_black_card_coloring(card) do |c|
+    def draw_card(card, selected_card)
+      with_card_coloring(card, selected_card) do |c|
         Curses.addstr(c.to_s)
       end
       Curses.addstr('  ')
     end
 
-    def draw_card_with_border(card)
+    def draw_card_with_border(card, selected_card)
       Curses.addstr('[')
-      with_black_card_coloring(card) do |c|
+      with_card_coloring(card, selected_card) do |c|
         Curses.addstr(c.to_s)
       end
       Curses.addstr(']')
@@ -147,11 +158,35 @@ module Freecell
       @black_card_color_pair ||= Curses.color_pair(BLACK_CARD_COLOR_PAIR_ID)
     end
 
-    def with_black_card_coloring(card)
+    def black_selected_card_color_pair
+      @black_selected_card_color_pair ||= Curses.color_pair(
+        SELECTED_BLACK_CARD_COLOR_PAIR_ID
+      )
+    end
+
+    def red_selected_card_color_pair
+      @red_selected_card_color_pair ||= Curses.color_pair(
+        SELECTED_RED_CARD_COLOR_PAIR_ID
+      )
+    end
+
+    def with_card_coloring(card, selected_card)
       is_black_card = card.respond_to?(:black?) && card.black?
-      Curses.attron(black_card_color_pair) if is_black_card
+      is_red_card = card.respond_to?(:red?) && card.red?
+      attr = if selected_card
+               if is_red_card && card == selected_card
+                 red_selected_card_color_pair
+               elsif is_black_card && card == selected_card
+                 black_selected_card_color_pair
+               else
+                 black_card_color_pair if is_black_card
+               end
+             else
+               black_card_color_pair if is_black_card
+             end
+      Curses.attron(attr) if attr
       yield card
-      Curses.attroff(black_card_color_pair) if is_black_card
+      Curses.attroff(attr) if attr
     end
 
     def advance_y(by:)

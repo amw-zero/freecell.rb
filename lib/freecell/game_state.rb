@@ -4,7 +4,7 @@ module Freecell
   # Holds the mutable state of the game that
   # moves can change
   class GameState
-    attr_reader :cascades, :free_cells, :foundations
+    attr_reader :cascades, :free_cells, :foundations, :selected_card
 
     def initialize(cascades = nil, free_cells = nil, foundations = nil)
       @cascades = cascades || partition_cascades(Deck.new.shuffle)
@@ -14,20 +14,25 @@ module Freecell
       @selected_card = nil
     end
 
-    def apply(move)
-      case move.type
+    def apply(command)
+      perform_state_reset
+      case command.type
       when :cascade_to_free_cell
-        perform_cascade_to_free_cell_move(move)
+        perform_cascade_to_free_cell_command(command)
       when :cascade_to_foundation
-        perform_cascade_to_foundation_move(move)
+        perform_cascade_to_foundation_command(command)
       when :free_cell_to_foundation
-        perform_free_cell_to_foundation_move(move)
+        perform_free_cell_to_foundation_command(command)
       when :free_cell_to_cascade
-        perform_free_cell_to_cascade_move(move)
+        perform_free_cell_to_cascade_command(command)
       when :cascade_to_cascade
-        perform_cascade_move(move)
+        perform_cascade_command(command)
       when :multi_card_cascade
-        perform_multi_card_cascade_move(move)
+        perform_multi_card_cascade_command(command)
+      when :free_cell_selection
+        perform_free_cell_selection(command)
+      when :cascade_selection
+        perform_cascade_selection(command)
       end
       self
     end
@@ -41,44 +46,56 @@ module Freecell
       full_cascades + short_cascades
     end
 
-    def perform_cascade_move(move)
-      return unless legal_cascade_to_cascade_move?(move)
-      @cascades[move.dest_index] << @cascades[move.source_index].pop
+    def perform_cascade_command(command)
+      return unless legal_cascade_to_cascade_move?(command)
+      @cascades[command.dest_index] << @cascades[command.source_index].pop
     end
 
-    def perform_cascade_to_free_cell_move(move)
+    def perform_cascade_to_free_cell_command(command)
       return unless @free_cells.length < 4
-      @free_cells << @cascades[move.source_index].pop
+      @free_cells << @cascades[command.source_index].pop
     end
 
-    def perform_free_cell_to_cascade_move(move)
-      legal_move = legal_free_cell_to_cascade_move?(move)
-      return unless legal_move && !@free_cells[move.source_index].nil?
-      @cascades[move.dest_index] << @free_cells.delete_at(move.source_index)
+    def perform_free_cell_to_cascade_command(command)
+      legal_move = legal_free_cell_to_cascade_move?(command)
+      return unless legal_move && !@free_cells[command.source_index].nil?
+      @cascades[command.dest_index] << @free_cells.delete_at(command.source_index)
     end
 
-    def perform_cascade_to_foundation_move(move)
-      return unless legal_foundation_move?(@cascades[move.source_index].last)
-      source_card = @cascades[move.source_index].pop
+    def perform_cascade_to_foundation_command(command)
+      return unless legal_foundation_move?(@cascades[command.source_index].last)
+      source_card = @cascades[command.source_index].pop
       @foundations[source_card.suit] << source_card
     end
 
-    def perform_free_cell_to_foundation_move(move)
-      source_card = @free_cells[move.source_index]
+    def perform_free_cell_to_foundation_command(command)
+      source_card = @free_cells[command.source_index]
       return unless legal_foundation_move?(source_card)
-      @foundations[source_card.suit] << @free_cells.delete_at(move.source_index)
+      @foundations[source_card.suit] << @free_cells.delete_at(command.source_index)
     end
 
-    def legal_cascade_to_cascade_move?(move)
-      source_card = @cascades[move.source_index].last
-      return true if @cascades[move.dest_index].empty?
-      dest_card = @cascades[move.dest_index].last
+    def perform_cascade_selection(command)
+      @selected_card = @cascades[command.source_index].last.dup
+    end
+
+    def perform_free_cell_selection(command)
+      @selected_card = @free_cells[command.source_index].dup
+    end
+
+    def perform_state_reset
+      @selected_card = nil
+    end
+
+    def legal_cascade_to_cascade_move?(command)
+      source_card = @cascades[command.source_index].last
+      return true if @cascades[command.dest_index].empty?
+      dest_card = @cascades[command.dest_index].last
       legal_cascade_move?(source_card, dest_card)
     end
 
-    def legal_free_cell_to_cascade_move?(move)
-      source_card = @free_cells[move.source_index]
-      dest_card = @cascades[move.dest_index].last
+    def legal_free_cell_to_cascade_move?(command)
+      source_card = @free_cells[command.source_index]
+      dest_card = @cascades[command.dest_index].last
       legal_cascade_move?(source_card, dest_card)
     end
 
@@ -88,12 +105,12 @@ module Freecell
       one_less_than_dest && source_card.opposite_color?(dest_card)
     end
 
-    def legal_cascade_to_foundation_move?(move)
-      legal_foundation_move?(@cascades[move.source_index].last)
+    def legal_cascade_to_foundation_move?(command)
+      legal_foundation_move?(@cascades[command.source_index].last)
     end
 
-    def legal_free_cell_to_foundation_move?(move)
-      legal_foundation_move?(@free_cells[move.source_index])
+    def legal_free_cell_to_foundation_move?(command)
+      legal_foundation_move?(@free_cells[command.source_index])
     end
 
     def legal_foundation_move?(source_card)
