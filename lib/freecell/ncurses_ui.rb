@@ -84,9 +84,9 @@ module Freecell
     end
 
     def render_bottom_area
-      Curses.attron(black_card_color_pair)
+      Curses.attron(black_card_color)
       Curses.addstr('q')
-      Curses.attroff(black_card_color_pair)
+      Curses.attroff(black_card_color)
       Curses.addstr('uit')
     end
 
@@ -106,8 +106,8 @@ module Freecell
     end
 
     def render_foundations(game_state)
-      [:diamonds, :hearts, :spades, :clubs].each do |suit|
-        card = game_state.foundations[suit].last || '   '
+      %i(diamonds hearts spades clubs).each do |suit|
+        card = game_state.foundations[suit].last || EmptyCard.new
         with_border do
           draw_card(card, game_state.selected_card)
         end
@@ -133,7 +133,7 @@ module Freecell
     def printable_card_grid(game_state)
       max_length = game_state.cascades.map(&:length).max
       game_state.cascades.map do |c|
-        c + (0...max_length - c.count).map { '   ' }
+        c + (0...max_length - c.count).map { EmptyCard.new }
       end.transpose
     end
 
@@ -142,14 +142,31 @@ module Freecell
     end
 
     def i_to_cascade_letter(i)
-      ascii_a = 97
-      [i + ascii_a].pack('c*')
+      [i + Freecell::CharacterParser::ASCII_LOWERCASE_A].pack('c*')
     end
 
     def draw_card(card, selected_card)
       with_card_coloring(card, selected_card) do |c|
-        Curses.addstr(c.to_s)
+        str = case c
+        when Freecell::Card
+          card_string(c)
+        when Freecell::EmptyCard
+          empty_card_string
+        end
+        Curses.addstr(str)
       end
+    end
+
+    def card_string(card)
+      if card.rank < 10
+        " #{card.rank}#{card.suit.to_s[0]}"
+      else
+        "#{card.rank}#{card.suit.to_s[0]}"
+      end
+    end
+
+    def empty_card_string
+      '   '
     end
 
     def with_border
@@ -158,39 +175,35 @@ module Freecell
       Curses.addstr(']')
     end
 
-    def black_card_color_pair
-      @black_card_color_pair ||= Curses.color_pair(BLACK_CARD_COLOR_PAIR_ID)
+    def black_card_color
+      @black_card_color ||= Curses.color_pair(BLACK_CARD_COLOR_PAIR_ID)
     end
 
-    def black_selected_card_color_pair
-      @black_selected_card_color_pair ||= Curses.color_pair(
+    def black_selected_card_color
+      @black_selected_card_color ||= Curses.color_pair(
         SELECTED_BLACK_CARD_COLOR_PAIR_ID
       )
     end
 
-    def red_selected_card_color_pair
-      @red_selected_card_color_pair ||= Curses.color_pair(
+    def red_selected_card_color
+      @red_selected_card_color ||= Curses.color_pair(
         SELECTED_RED_CARD_COLOR_PAIR_ID
       )
     end
 
     def with_card_coloring(card, selected_card)
-      is_black_card = card.respond_to?(:black?) && card.black?
-      is_red_card = card.respond_to?(:red?) && card.red?
-      attr = if selected_card
-               if is_red_card && card == selected_card
-                 red_selected_card_color_pair
-               elsif is_black_card && card == selected_card
-                 black_selected_card_color_pair
-               else
-                 black_card_color_pair if is_black_card
-               end
-             else
-               black_card_color_pair if is_black_card
-             end
+      attr = color_for_card(card, selected_card)
       Curses.attron(attr) if attr
       yield card
       Curses.attroff(attr) if attr
+    end
+
+    def color_for_card(card, selected_card)
+      attr = black_card_color if card.black?
+      return attr unless selected_card
+      attr = red_selected_card_color if card.red? && card == selected_card
+      attr = black_selected_card_color if card.black? && card == selected_card
+      attr
     end
 
     def advance_y(by:)

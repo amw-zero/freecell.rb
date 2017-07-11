@@ -10,14 +10,6 @@ module Freecell
       @suit = suit
     end
 
-    def to_s
-      if @rank < 10
-        " #{@rank}#{@suit.to_s[0]}"
-      else
-        "#{@rank}#{@suit.to_s[0]}"
-      end
-    end
-
     def ==(rhs)
       %i(rank suit).all? { |v| self.send(v) == rhs.send(v) }
     end
@@ -32,6 +24,17 @@ module Freecell
     def opposite_color?(other)
       red = [:hearts, :diamonds]
       red.include?(suit) ^ red.include?(other.suit)
+    end
+  end
+
+  # Used for printing
+  class EmptyCard
+    def black?
+      false
+    end
+
+    def red?
+      false
     end
   end
 end
