@@ -24,25 +24,6 @@ module Freecell
       Curses.close_screen
     end
 
-    def setup_color
-      Curses.start_color
-      Curses.init_pair(
-        BLACK_CARD_COLOR_PAIR_ID,
-        Curses::COLOR_CYAN,
-        Curses::COLOR_BLACK
-      )
-      Curses.init_pair(
-        SELECTED_BLACK_CARD_COLOR_PAIR_ID,
-        Curses::COLOR_CYAN,
-        Curses::COLOR_BLUE
-      )
-      Curses.init_pair(
-        SELECTED_RED_CARD_COLOR_PAIR_ID,
-        Curses::COLOR_WHITE,
-        Curses::COLOR_BLUE
-      )
-    end
-
     def render(game_state)
       Curses.clear
       render_top_area(game_state)
@@ -66,6 +47,25 @@ module Freecell
     end
 
     private
+
+    def setup_color
+      Curses.start_color
+      Curses.init_pair(
+        BLACK_CARD_COLOR_PAIR_ID,
+        Curses::COLOR_CYAN,
+        Curses::COLOR_BLACK
+      )
+      Curses.init_pair(
+        SELECTED_BLACK_CARD_COLOR_PAIR_ID,
+        Curses::COLOR_CYAN,
+        Curses::COLOR_BLUE
+      )
+      Curses.init_pair(
+        SELECTED_RED_CARD_COLOR_PAIR_ID,
+        Curses::COLOR_WHITE,
+        Curses::COLOR_BLUE
+      )
+    end
 
     def reset_state
       @curr_y = 0
