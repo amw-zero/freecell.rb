@@ -35,7 +35,12 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_cascade, 0, 1])
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_cascade,
+          source_index: 0,
+          dest_index: 1
+        )
+        game_state.apply(cmd)
       end
 
       subject do
@@ -58,11 +63,15 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
-        game_state.apply([:cascade_to_free_cell, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_free_cell,
+          source_index: 0
+        )
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
+        game_state.apply(cmd)
       end
 
       subject do
@@ -93,8 +102,16 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:cascade_to_foundation, 0])
-        game_state.apply([:cascade_to_foundation, 1])
+        cmd1 = Freecell::GameStateCommand.new(
+          type: :cascade_to_foundation,
+          source_index: 0
+        )
+        cmd2 = Freecell::GameStateCommand.new(
+          type: :cascade_to_foundation,
+          source_index: 1
+        )
+        game_state.apply(cmd1)
+        game_state.apply(cmd2)
       end
 
       subject do
@@ -124,8 +141,12 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:free_cell_to_foundation, 0])
-        game_state.apply([:free_cell_to_foundation, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_foundation,
+          source_index: 0
+        )
+        game_state.apply(cmd)
+        game_state.apply(cmd)
       end
 
       it 'moves a valid card to its foundation' do
@@ -148,12 +169,82 @@ describe Freecell::GameState do
       end
 
       before do
-        game_state.apply([:free_cell_to_cascade, 0, 0])
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_cascade,
+          source_index: 0,
+          dest_index: 0
+        )
+        game_state.apply(cmd)
       end
 
       it 'moves the card to the cascade' do
         expect(game_state.cascades[0].count).to eq(2)
         expect_card(game_state.cascades[0].last, 2, :hearts)
+      end
+    end
+
+    context 'when saving the currently selected free cell card' do
+      let(:game_state) do
+        free_cells = [
+          s3,
+          h4
+        ]
+        Freecell::GameState.new(nil, free_cells)
+      end
+      before do
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_selection,
+          source_index: 1
+        )
+        game_state.apply(cmd)
+      end
+
+      it 'saves the card' do
+        expect(game_state.selected_card).to eq(h4)
+      end
+    end
+
+    context 'when saving the currently selected cascade card' do
+      let(:game_state) do
+        cascades = [
+          [s3],
+        ]
+        Freecell::GameState.new(cascades)
+      end
+      before do
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_selection,
+          source_index: 0
+        )
+        game_state.apply(cmd)
+      end
+
+      it 'saves the card' do
+        expect(game_state.selected_card).to eq(s3)
+      end
+    end
+
+    context 'when applying a reset command' do
+      let(:game_state) do
+        cascades = [
+          [s3],
+        ]
+        Freecell::GameState.new(cascades)
+      end
+      before do
+        selection_cmd = Freecell::GameStateCommand.new(
+          type: :cascade_selection,
+          source_index: 0
+        )
+        reset_cmd = Freecell::GameStateCommand.new(
+          type: :state_reset
+        )
+        game_state.apply(selection_cmd)
+        game_state.apply(reset_cmd)
+      end
+
+      it 'removes the saved selected card' do
+        expect(game_state.selected_card).to be_nil
       end
     end
   end

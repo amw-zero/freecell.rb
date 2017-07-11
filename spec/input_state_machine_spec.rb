@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 describe Freecell::InputStateMachine do
   describe '#handle_ch' do
     let(:sm) do
@@ -32,7 +34,12 @@ describe Freecell::InputStateMachine do
       end
 
       it 'returns the correct move' do
-        expect(subject).to eq({ type: :move, value: [:cascade_to_cascade, 1, 2] })
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_cascade,
+          source_index: 1,
+          dest_index: 2
+        )
+        expect(subject).to eq(cmd)
       end
     end
 
@@ -46,7 +53,11 @@ describe Freecell::InputStateMachine do
       end
 
       it 'returns the correct move' do
-        expect(subject).to eq({ type: :move, value: [:cascade_to_free_cell, 3] })
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_free_cell,
+          source_index: 3
+        )
+        expect(subject).to eq(cmd)
       end
     end
 
@@ -60,7 +71,12 @@ describe Freecell::InputStateMachine do
       end
 
       it 'returns the correct move' do
-        expect(subject).to eq({ type: :move, value: [:free_cell_to_cascade, 2, 2] })
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_cascade,
+          source_index: 2,
+          dest_index: 2
+        )
+        expect(subject).to eq(cmd)
       end
     end
 
@@ -74,7 +90,11 @@ describe Freecell::InputStateMachine do
       end
 
       it 'returns the correct move' do
-        expect(subject).to eq({ type: :move, value: [:cascade_to_foundation, 7] })
+        cmd = Freecell::GameStateCommand.new(
+          type: :cascade_to_foundation,
+          source_index: 7
+        )
+        expect(subject).to eq(cmd)
       end
     end
 
@@ -88,7 +108,11 @@ describe Freecell::InputStateMachine do
       end
 
       it 'returns the correct move' do
-        expect(subject).to eq({ type: :move, value: [:free_cell_to_foundation, 2] })
+        cmd = Freecell::GameStateCommand.new(
+          type: :free_cell_to_foundation,
+          source_index: 2
+        )
+        expect(subject).to eq(cmd)
       end
     end
   end
