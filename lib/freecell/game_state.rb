@@ -14,6 +14,16 @@ module Freecell
       @selected_card = nil
     end
 
+    def apply(command)
+      remove_selected_card
+      action = command_to_action[command.type]
+      return self unless action
+      send(action, command)
+      self
+    end
+
+    private
+
     def command_to_action
       {
         cascade_to_free_cell:    :perform_cascade_to_free_cell_command,
@@ -26,16 +36,6 @@ module Freecell
         cascade_selection:       :perform_cascade_selection
       }
     end
-
-    def apply(command)
-      remove_selected_card
-      action = command_to_action[command.type]
-      return self unless action
-      send(action, command)
-      self
-    end
-
-    private
 
     def partition_cascades(deck)
       full_cascade_cards, short_cascade_cards = deck.cards.each_slice(28).to_a
