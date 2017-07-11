@@ -14,26 +14,24 @@ module Freecell
       @selected_card = nil
     end
 
+    def command_to_action
+      {
+        cascade_to_free_cell:    :perform_cascade_to_free_cell_command,
+        cascade_to_foundation:   :perform_cascade_to_foundation_command,
+        free_cell_to_foundation: :perform_free_cell_to_foundation_command,
+        free_cell_to_cascade:    :perform_free_cell_to_cascade_command,
+        cascade_to_cascade:      :perform_cascade_command,
+        multi_card_cascade:      :perform_multi_card_cascade_commmand,
+        free_cell_selection:     :perform_free_cell_selection,
+        cascade_selection:       :perform_cascade_selection
+      }
+    end
+
     def apply(command)
-      perform_state_reset
-      case command.type
-      when :cascade_to_free_cell
-        perform_cascade_to_free_cell_command(command)
-      when :cascade_to_foundation
-        perform_cascade_to_foundation_command(command)
-      when :free_cell_to_foundation
-        perform_free_cell_to_foundation_command(command)
-      when :free_cell_to_cascade
-        perform_free_cell_to_cascade_command(command)
-      when :cascade_to_cascade
-        perform_cascade_command(command)
-      when :multi_card_cascade
-        perform_multi_card_cascade_command(command)
-      when :free_cell_selection
-        perform_free_cell_selection(command)
-      when :cascade_selection
-        perform_cascade_selection(command)
-      end
+      remove_selected_card
+      action = command_to_action[command.type]
+      return self unless action
+      send(action, command)
       self
     end
 
@@ -59,7 +57,9 @@ module Freecell
     def perform_free_cell_to_cascade_command(command)
       legal_move = legal_free_cell_to_cascade_move?(command)
       return unless legal_move && !@free_cells[command.source_index].nil?
-      @cascades[command.dest_index] << @free_cells.delete_at(command.source_index)
+      @cascades[command.dest_index] << @free_cells.delete_at(
+        command.source_index
+      )
     end
 
     def perform_cascade_to_foundation_command(command)
@@ -71,7 +71,9 @@ module Freecell
     def perform_free_cell_to_foundation_command(command)
       source_card = @free_cells[command.source_index]
       return unless legal_foundation_move?(source_card)
-      @foundations[source_card.suit] << @free_cells.delete_at(command.source_index)
+      @foundations[source_card.suit] << @free_cells.delete_at(
+        command.source_index
+      )
     end
 
     def perform_cascade_selection(command)
@@ -82,7 +84,7 @@ module Freecell
       @selected_card = @free_cells[command.source_index].dup
     end
 
-    def perform_state_reset
+    def remove_selected_card
       @selected_card = nil
     end
 

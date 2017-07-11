@@ -1,6 +1,8 @@
 require 'state_machine'
 
 module Freecell
+  # Commands that are created from parsed user input and used to mutate
+  # the GameState
   class GameStateCommand
     attr_reader :type, :source_index, :dest_index, :num_cards
 
@@ -11,11 +13,14 @@ module Freecell
       @num_cards = num_cards
     end
 
-    def ==(rhs)
-      %i(type source_index dest_index num_cards).all? { |v| self.send(v) == rhs.send(v) }
+    def ==(other)
+      %i[type source_index dest_index num_cards].all? do |v|
+        send(v) == other.send(v)
+      end
     end
   end
 
+  # Parses game information from a single user input character
   class CharacterParser
     CARRIAGE_RETURN_BYTE = 13
     ASCII_LOWERCASE_A = 97
@@ -70,7 +75,6 @@ module Freecell
     state_machine :state, initial: :empty do
       event :receive_number do
         transition empty: :number
-        transition all - :empty => :empty
       end
 
       event :receive_cascade_letter do
@@ -91,20 +95,38 @@ module Freecell
       state :empty do
         def receive_ch(ch)
           if @parser.number?(ch)
-            @num_cards = ch.to_i
-            @next_state_event = :receive_number
+            handle_number(ch)
           elsif @parser.free_cell_letter?(ch)
-            @source_index = @parser.free_cell_to_i(ch)
-            @next_state_event = :receive_free_cell_letter
-            selected_free_cell_result
+            handle_free_cell_letter(ch)
           elsif @parser.cascade_letter?(ch)
-            @source_index = @parser.cascade_to_i(ch)
-            @next_state_event = :receive_cascade_letter
-            selected_cascade_result
+            handle_cascade_letter(ch)
           else
             @next_state_event = :reset
-            reset_result
+            GameStateCommand.new(type: :reset_state)
           end
+        end
+
+        def handle_number(ch)
+          @num_cards = ch.to_i
+          @next_state_event = :receive_number
+        end
+
+        def handle_free_cell_letter(ch)
+          @source_index = @parser.free_cell_to_i(ch)
+          @next_state_event = :receive_free_cell_letter
+          GameStateCommand.new(
+            type: :free_cell_selection,
+            source_index: @source_index
+          )
+        end
+
+        def handle_cascade_letter(ch)
+          @source_index = @parser.cascade_to_i(ch)
+          @next_state_event = :receive_cascade_letter
+          GameStateCommand.new(
+            type: :cascade_selection,
+            source_index: @source_index
+          )
         end
       end
 
@@ -112,14 +134,36 @@ module Freecell
         def receive_ch(ch)
           @next_state_event = :reset
           if @parser.cascade_letter?(ch)
-            cascade_to_cascade_result(ch)
+            handle_cascade_letter(ch)
           elsif @parser.foundation_char?(ch)
-            cascade_to_foundation_result
+            handle_foundation_ch
           elsif @parser.free_cell_dest_letter?(ch)
-            cascade_to_free_cell_result
+            handle_free_cell_letter
           else
-            reset_result
+            GameStateCommand.new(type: :state_reset)
           end
+        end
+
+        def handle_cascade_letter(ch)
+          GameStateCommand.new(
+            type: :cascade_to_cascade,
+            source_index: @source_index,
+            dest_index: @parser.cascade_to_i(ch)
+          )
+        end
+
+        def handle_foundation_ch
+          GameStateCommand.new(
+            type: :cascade_to_foundation,
+            source_index: @source_index
+          )
+        end
+
+        def handle_free_cell_letter
+          GameStateCommand.new(
+            type: :cascade_to_free_cell,
+            source_index: @source_index
+          )
         end
       end
 
@@ -127,12 +171,27 @@ module Freecell
         def receive_ch(ch)
           @next_state_event = :reset
           if @parser.cascade_letter?(ch)
-            free_cell_to_cascade_result(ch)
+            handle_cascade_letter(ch)
           elsif @parser.foundation_char?(ch)
-            free_cell_to_foundation_result
+            handle_foundation_ch
           else
-            reset_result
+            GameStateCommand.new(type: :reset_state)
           end
+        end
+
+        def handle_cascade_letter(ch)
+          GameStateCommand.new(
+            type: :free_cell_to_cascade,
+            source_index: @source_index,
+            dest_index: @parser.cascade_to_i(ch)
+          )
+        end
+
+        def handle_foundation_ch
+          GameStateCommand.new(
+            type: :free_cell_to_foundation,
+            source_index: @source_index
+          )
         end
       end
 
@@ -154,63 +213,6 @@ module Freecell
       @source_index = nil
       @dest_index = nil
       @num_cards = 0
-    end
-
-    def cascade_to_cascade_result(ch)
-      GameStateCommand.new(
-        type: :cascade_to_cascade,
-        source_index: @source_index,
-        dest_index: @parser.cascade_to_i(ch)
-      )
-    end
-
-    def cascade_to_foundation_result
-      GameStateCommand.new(
-        type: :cascade_to_foundation,
-        source_index: @source_index
-      )
-    end
-
-    def cascade_to_free_cell_result
-      GameStateCommand.new(
-        type: :cascade_to_free_cell,
-        source_index: @source_index
-      )
-    end
-
-    def free_cell_to_cascade_result(ch)
-      GameStateCommand.new(
-        type: :free_cell_to_cascade,
-        source_index: @source_index,
-        dest_index: @parser.cascade_to_i(ch)
-      )
-    end
-
-    def free_cell_to_foundation_result
-      GameStateCommand.new(
-        type: :free_cell_to_foundation,
-        source_index: @source_index
-      )
-    end
-
-    def selected_free_cell_result
-      GameStateCommand.new(
-        type: :free_cell_selection,
-        source_index: @source_index
-      )
-    end
-
-    def selected_cascade_result
-      GameStateCommand.new(
-        type: :cascade_selection,
-        source_index: @source_index
-      )
-    end
-
-    def reset_result
-      GameStateCommand.new(
-        type: :state_reset
-      )
     end
   end
 end
