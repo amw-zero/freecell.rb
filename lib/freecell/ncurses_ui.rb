@@ -92,7 +92,9 @@ module Freecell
 
     def render_free_cells(game_state)
       game_state.free_cells.each do |card|
-        draw_card_with_border(card, game_state.selected_card)
+        with_border do
+          draw_card(card, game_state.selected_card)
+        end
       end
       (4 - game_state.free_cells.count).times do
         Curses.addstr('[   ]')
@@ -106,14 +108,19 @@ module Freecell
     def render_foundations(game_state)
       [:diamonds, :hearts, :spades, :clubs].each do |suit|
         card = game_state.foundations[suit].last || '   '
-        draw_card_with_border(card, game_state.selected_card)
+        with_border do
+          draw_card(card, game_state.selected_card)
+        end
       end
     end
 
     def render_cascades(game_state)
       printable_card_grid(game_state).each do |row|
         Curses.addstr('   ')
-        row.each { |card| draw_card(card, game_state.selected_card) }
+        row.each do |card|
+          draw_card(card, game_state.selected_card)
+          Curses.addstr('  ')
+        end
         advance_y(by: 1)
       end
       advance_y(by: 1)
@@ -143,14 +150,11 @@ module Freecell
       with_card_coloring(card, selected_card) do |c|
         Curses.addstr(c.to_s)
       end
-      Curses.addstr('  ')
     end
 
-    def draw_card_with_border(card, selected_card)
+    def with_border
       Curses.addstr('[')
-      with_card_coloring(card, selected_card) do |c|
-        Curses.addstr(c.to_s)
-      end
+      yield
       Curses.addstr(']')
     end
 
