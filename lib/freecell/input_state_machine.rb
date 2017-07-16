@@ -107,8 +107,10 @@ module Freecell
         end
 
         def handle_number(ch)
-          @num_cards = ch.to_i
-          @next_state_event = :receive_number
+          # @num_cards = ch.to_i
+          # @next_state_event = :receive_number
+          @next_state_event = :reset
+          GameStateCommand.new(type: :reset_state)
         end
 
         def handle_free_cell_letter(ch)
