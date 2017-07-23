@@ -93,7 +93,7 @@ module Freecell
     def render_free_cells(game_state)
       game_state.free_cells.each do |card|
         with_border do
-          draw_card(card, game_state.selected_card)
+          draw_card(card, game_state.selected_cards)
         end
       end
       (4 - game_state.free_cells.count).times do
@@ -109,7 +109,7 @@ module Freecell
       %i(diamonds hearts spades clubs).each do |suit|
         card = game_state.foundations[suit].last || EmptyCard.new
         with_border do
-          draw_card(card, game_state.selected_card)
+          draw_card(card, game_state.selected_cards)
         end
       end
     end
@@ -118,7 +118,7 @@ module Freecell
       printable_card_grid(game_state).each do |row|
         Curses.addstr('   ')
         row.each do |card|
-          draw_card(card, game_state.selected_card)
+          draw_card(card, game_state.selected_cards)
           Curses.addstr('  ')
         end
         advance_y(by: 1)
@@ -145,8 +145,8 @@ module Freecell
       [i + Freecell::CharacterParser::ASCII_LOWERCASE_A].pack('c*')
     end
 
-    def draw_card(card, selected_card)
-      with_card_coloring(card, selected_card) do |c|
+    def draw_card(card, selected_cards)
+      with_card_coloring(card, selected_cards) do |c|
         str = case c
         when Freecell::Card
           card_string(c)
@@ -191,18 +191,18 @@ module Freecell
       )
     end
 
-    def with_card_coloring(card, selected_card)
-      attr = color_for_card(card, selected_card)
+    def with_card_coloring(card, selected_cards)
+      attr = color_for_card(card, selected_cards)
       Curses.attron(attr) if attr
       yield card
       Curses.attroff(attr) if attr
     end
 
-    def color_for_card(card, selected_card)
+    def color_for_card(card, selected_cards)
       attr = black_card_color if card.black?
-      return attr unless selected_card
-      attr = red_selected_card_color if card.red? && card == selected_card
-      attr = black_selected_card_color if card.black? && card == selected_card
+      return attr unless selected_cards
+      attr = red_selected_card_color if card.red? && selected_cards.include?(card)
+      attr = black_selected_card_color if card.black? && selected_cards.include?(card)
       attr
     end
 

@@ -5,19 +5,19 @@ module Freecell
   # Holds the mutable state of the game that
   # moves can change
   class GameState
-    attr_reader :cascades, :free_cells, :foundations, :selected_card
+    attr_reader :cascades, :free_cells, :foundations, :selected_cards
 
     def initialize(cascades = nil, free_cells = nil, foundations = nil)
       @cascades = cascades || partition_cascades(Deck.new.shuffle)
       @free_cells = free_cells || []
       empty_foundations = { hearts: [], diamonds: [], spades: [], clubs: [] }
       @foundations = foundations || empty_foundations
-      @selected_card = nil
+      @selected_cards = nil
       @legality = MoveLegality.new(@cascades, @free_cells, @foundations)
     end
 
     def apply(command)
-      remove_selected_card
+      remove_selected_cards
       action = command_to_action[command.type]
       return self unless action
       send(action, command)
@@ -48,7 +48,10 @@ module Freecell
 
     def perform_cascade_command(command)
       return unless @legality.cascade_to_cascade_move?(command)
-      @cascades[command.dest_index] << @cascades[command.source_index].pop
+      cards_to_move = command.num_cards.times.each_with_object([]) do |_, c|
+        c << @cascades[command.source_index].pop
+      end.reverse
+      @cascades[command.dest_index] += cards_to_move
     end
 
     def perform_cascade_to_free_cell_command(command)
@@ -78,15 +81,16 @@ module Freecell
     end
 
     def perform_cascade_selection(command)
-      @selected_card = @cascades[command.source_index].last.dup
+      source_cascade = @cascades[command.source_index]
+      @selected_cards = source_cascade[-command.num_cards, command.num_cards]
     end
 
     def perform_free_cell_selection(command)
-      @selected_card = @free_cells[command.source_index].dup
+      @selected_cards = [@free_cells[command.source_index]]
     end
 
-    def remove_selected_card
-      @selected_card = nil
+    def remove_selected_cards
+      @selected_cards = nil
     end
   end
 end

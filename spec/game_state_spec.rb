@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 describe Freecell::GameState do
   let(:h4) { Freecell::Card.new(4, :hearts) }
   let(:h3) { Freecell::Card.new(3, :hearts) }
@@ -26,31 +28,66 @@ describe Freecell::GameState do
 
   describe '#apply' do
     context 'when moving between cascades' do
-      let(:game_state) do
-        cascades = [
-          [s3],
-          [h4]
-        ]
-        Freecell::GameState.new(cascades)
+      context 'when moving a single card' do
+        let(:game_state) do
+          cascades = [
+            [s3],
+            [h4]
+          ]
+          Freecell::GameState.new(cascades)
+        end
+
+        before do
+          cmd = Freecell::GameStateCommand.new(
+            type: :cascade_to_cascade,
+            source_index: 0,
+            dest_index: 1
+          )
+          game_state.apply(cmd)
+        end
+
+        subject do
+          game_state.cascades[1]
+        end
+
+        it 'allows legal moves' do
+          expect(subject.length).to eq(2)
+          expect_card(subject[0], 4, :hearts)
+          expect_card(subject[1], 3, :spades)
+        end
       end
 
-      before do
-        cmd = Freecell::GameStateCommand.new(
-          type: :cascade_to_cascade,
-          source_index: 0,
-          dest_index: 1
-        )
-        game_state.apply(cmd)
-      end
+      context 'when moving multiple cards' do
+        let(:game_state) do
+          cascades = [
+            [s3, h2],
+            [h4]
+          ]
+          Freecell::GameState.new(cascades)
+        end
 
-      subject do
-        game_state.cascades[1]
-      end
+        let(:cmd) do
+          Freecell::GameStateCommand.new(
+            type: :cascade_to_cascade,
+            source_index: 0,
+            dest_index: 1,
+            num_cards: 2
+          )
+        end
 
-      it 'allows legal moves' do
-        expect(subject.length).to eq(2)
-        expect_card(subject[0], 4, :hearts)
-        expect_card(subject[1], 3, :spades)
+        before do
+          game_state.apply(cmd)
+        end
+
+        subject do
+          game_state.cascades[1]
+        end
+
+        it 'moves the cards' do
+          expect(subject[0]).to eq(h4)
+          expect(subject[1]).to eq(s3)
+          expect(subject[2]).to eq(h2)
+        end
       end
     end
 
@@ -200,34 +237,59 @@ describe Freecell::GameState do
       end
 
       it 'saves the card' do
-        expect(game_state.selected_card).to eq(h4)
+        expect(game_state.selected_cards).to eq([h4])
       end
     end
 
     context 'when saving the currently selected cascade card' do
-      let(:game_state) do
-        cascades = [
-          [s3],
-        ]
-        Freecell::GameState.new(cascades)
-      end
-      before do
-        cmd = Freecell::GameStateCommand.new(
-          type: :cascade_selection,
-          source_index: 0
-        )
-        game_state.apply(cmd)
+      context 'when saving one card' do
+        let(:game_state) do
+          cascades = [
+            [s3]
+          ]
+          Freecell::GameState.new(cascades)
+        end
+        before do
+          cmd = Freecell::GameStateCommand.new(
+            type: :cascade_selection,
+            source_index: 0
+          )
+          game_state.apply(cmd)
+        end
+
+        it 'saves the card' do
+          expect(game_state.selected_cards).to eq([s3])
+        end
       end
 
-      it 'saves the card' do
-        expect(game_state.selected_card).to eq(s3)
+      context 'when saving multiple cards' do
+        let(:game_state) do
+          cascades = [
+            [s3, h2],
+            [h4]
+          ]
+          Freecell::GameState.new(cascades)
+        end
+
+        before do
+          cmd = Freecell::GameStateCommand.new(
+            type: :cascade_selection,
+            source_index: 0,
+            num_cards: 2
+          )
+          game_state.apply(cmd)
+        end
+
+        it 'saves the card' do
+          expect(game_state.selected_cards).to eq([s3, h2])
+        end
       end
     end
 
     context 'when applying a reset command' do
       let(:game_state) do
         cascades = [
-          [s3],
+          [s3]
         ]
         Freecell::GameState.new(cascades)
       end
@@ -244,7 +306,7 @@ describe Freecell::GameState do
       end
 
       it 'removes the saved selected card' do
-        expect(game_state.selected_card).to be_nil
+        expect(game_state.selected_cards).to be_nil
       end
     end
   end
