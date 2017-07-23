@@ -55,6 +55,10 @@ describe Freecell::GameState do
           expect_card(subject[0], 4, :hearts)
           expect_card(subject[1], 3, :spades)
         end
+
+        it 'updates the number of moves' do
+          expect(game_state.num_moves).to eq(1)
+        end
       end
 
       context 'when moving multiple cards' do
@@ -87,6 +91,10 @@ describe Freecell::GameState do
           expect(subject[0]).to eq(h4)
           expect(subject[1]).to eq(s3)
           expect(subject[2]).to eq(h2)
+        end
+
+        it 'updates the number of moves' do
+          expect(game_state.num_moves).to eq(1)
         end
       end
     end
@@ -122,6 +130,10 @@ describe Freecell::GameState do
         expect_card(subject[1], 1, :hearts)
         expect_card(subject[2], 2, :hearts)
         expect_card(subject[3], 3, :hearts)
+      end
+
+      it 'updates the number of moves' do
+        expect(game_state.num_moves).to eq(4)
       end
     end
 
@@ -165,6 +177,10 @@ describe Freecell::GameState do
         expect(game_state.cascades[1].count).to eq(1)
         expect(subject[:spades].count).to eq(1)
       end
+
+      it 'updates the number of moves' do
+        expect(game_state.num_moves).to eq(1)
+      end
     end
 
     context 'when moving to foundations from free cells' do
@@ -194,6 +210,10 @@ describe Freecell::GameState do
       it 'doesn\t move an invalid card' do
         expect(game_state.foundations[:spades].count).to eq(0)
       end
+
+      it 'updates the number of moves' do
+        expect(game_state.num_moves).to eq(1)
+      end
     end
 
     context 'when moving to cascades from free cells' do
@@ -217,6 +237,10 @@ describe Freecell::GameState do
       it 'moves the card to the cascade' do
         expect(game_state.cascades[0].count).to eq(2)
         expect_card(game_state.cascades[0].last, 2, :hearts)
+      end
+
+      it 'updates the number of moves' do
+        expect(game_state.num_moves).to eq(1)
       end
     end
 
@@ -283,6 +307,10 @@ describe Freecell::GameState do
         it 'saves the card' do
           expect(game_state.selected_cards).to eq([s3, h2])
         end
+
+        it 'does not update the number of moves' do
+          expect(game_state.num_moves).to eq(0)
+        end
       end
     end
 
@@ -307,6 +335,10 @@ describe Freecell::GameState do
 
       it 'removes the saved selected card' do
         expect(game_state.selected_cards).to be_nil
+      end
+
+      it 'does not update the number of moves' do
+        expect(game_state.num_moves).to eq(0)
       end
     end
   end
