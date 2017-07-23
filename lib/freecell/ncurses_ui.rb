@@ -91,22 +91,30 @@ module Freecell
     end
 
     def render_free_cells(game_state)
-      game_state.free_cells.each do |card|
-        with_border do
-          draw_card(card, game_state.selected_cards)
-        end
-      end
-      (4 - game_state.free_cells.count).times do
-        Curses.addstr('[   ]')
-      end
+      draw_occupied_free_cells(game_state)
+      draw_empty_free_cells(game_state)
       Curses.setpos(@curr_y + 1, 0)
       game_state.free_cells.each_index do |i|
         Curses.addstr("  #{i_to_free_cell_letter(i)}  ")
       end
     end
 
+    def draw_occupied_free_cells(game_state)
+      game_state.free_cells.each do |card|
+        with_border do
+          draw_card(card, game_state.selected_cards)
+        end
+      end
+    end
+
+    def draw_empty_free_cells(game_state)
+      (4 - game_state.free_cells.count).times do
+        Curses.addstr('[   ]')
+      end
+    end
+
     def render_foundations(game_state)
-      %i(diamonds hearts spades clubs).each do |suit|
+      %i[diamonds hearts spades clubs].each do |suit|
         card = game_state.foundations[suit].last || EmptyCard.new
         with_border do
           draw_card(card, game_state.selected_cards)
@@ -115,6 +123,15 @@ module Freecell
     end
 
     def render_cascades(game_state)
+      draw_cascade_cards(game_state)
+      advance_y(by: 1)
+      Curses.setpos(@curr_y, 4)
+      game_state.cascades.length.times do |i|
+        Curses.addstr("#{i_to_cascade_letter(i)}    ")
+      end
+    end
+
+    def draw_cascade_cards(game_state)
       printable_card_grid(game_state).each do |row|
         Curses.addstr('   ')
         row.each do |card|
@@ -122,11 +139,6 @@ module Freecell
           Curses.addstr('  ')
         end
         advance_y(by: 1)
-      end
-      advance_y(by: 1)
-      Curses.setpos(@curr_y, 4)
-      game_state.cascades.length.times do |i|
-        Curses.addstr("#{i_to_cascade_letter(i)}    ")
       end
     end
 
@@ -138,7 +150,7 @@ module Freecell
     end
 
     def i_to_free_cell_letter(i)
-      %w(w x y z)[i]
+      %w[w x y z][i]
     end
 
     def i_to_cascade_letter(i)
@@ -148,11 +160,11 @@ module Freecell
     def draw_card(card, selected_cards)
       with_card_coloring(card, selected_cards) do |c|
         str = case c
-        when Freecell::Card
-          card_string(c)
-        when Freecell::EmptyCard
-          empty_card_string
-        end
+              when Freecell::Card
+                card_string(c)
+              when Freecell::EmptyCard
+                empty_card_string
+              end
         Curses.addstr(str)
       end
     end
@@ -200,9 +212,10 @@ module Freecell
 
     def color_for_card(card, selected_cards)
       attr = black_card_color if card.black?
-      return attr unless selected_cards
-      attr = red_selected_card_color if card.red? && selected_cards.include?(card)
-      attr = black_selected_card_color if card.black? && selected_cards.include?(card)
+      return attr unless selected_cards && (card.red? || card.black?)
+      card_is_selected = selected_cards.include?(card)
+      attr = red_selected_card_color if card.red? && card_is_selected
+      attr = black_selected_card_color if card.black? && card_is_selected
       attr
     end
 
