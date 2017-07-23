@@ -1,6 +1,7 @@
 require 'state_machine'
 
 module Freecell
+  # rubocop:disable Metrics/ClassLength
   # Commands that are created from parsed user input and used to mutate
   # the GameState
   class GameStateCommand
@@ -78,8 +79,7 @@ module Freecell
       end
 
       event :receive_cascade_letter do
-        transition empty: :cascade_letter,
-                   number: :number_cascade_letter
+        transition %i[empty number] => :cascade_letter
       end
 
       event :receive_free_cell_letter do
@@ -107,9 +107,8 @@ module Freecell
         end
 
         def handle_number(ch)
-          # @num_cards = ch.to_i
-          # @next_state_event = :receive_number
-          @next_state_event = :reset
+          @num_cards = ch.to_i
+          @next_state_event = :receive_number
           GameStateCommand.new(type: :reset_state)
         end
 
@@ -123,11 +122,13 @@ module Freecell
         end
 
         def handle_cascade_letter(ch)
+          @num_cards = 1
           @source_index = @parser.cascade_to_i(ch)
           @next_state_event = :receive_cascade_letter
           GameStateCommand.new(
             type: :cascade_selection,
-            source_index: @source_index
+            source_index: @source_index,
+            num_cards: @num_cards
           )
         end
       end
@@ -150,7 +151,8 @@ module Freecell
           GameStateCommand.new(
             type: :cascade_to_cascade,
             source_index: @source_index,
-            dest_index: @parser.cascade_to_i(ch)
+            dest_index: @parser.cascade_to_i(ch),
+            num_cards: @num_cards
           )
         end
 
@@ -198,7 +200,24 @@ module Freecell
       end
 
       state :number do
-        def receive(ch); end
+        def receive_ch(ch)
+          if @parser.cascade_letter?(ch)
+            handle_cascade_letter(ch)
+          else
+            @next_state_event = :reset
+            GameStateCommand.new(type: :reset_state)
+          end
+        end
+
+        def handle_cascade_letter(ch)
+          @source_index = @parser.cascade_to_i(ch)
+          @next_state_event = :receive_cascade_letter
+          GameStateCommand.new(
+            type: :cascade_selection,
+            source_index: @source_index,
+            num_cards: @num_cards
+          )
+        end
       end
     end
 
@@ -217,4 +236,5 @@ module Freecell
       @num_cards = 0
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

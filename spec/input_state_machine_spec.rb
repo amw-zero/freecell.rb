@@ -25,21 +25,44 @@ describe Freecell::InputStateMachine do
     end
 
     context 'when input should move between cascades' do
-      before do
-        sm.handle_ch('b')
+      context 'when moving a single card' do
+        before do
+          sm.handle_ch('b')
+        end
+
+        subject do
+          sm.handle_ch('c')
+        end
+
+        it 'returns the correct move' do
+          cmd = Freecell::GameStateCommand.new(
+            type: :cascade_to_cascade,
+            source_index: 1,
+            dest_index: 2
+          )
+          expect(subject).to eq(cmd)
+        end
       end
 
-      subject do
-        sm.handle_ch('c')
-      end
+      context 'when moving multiple cards' do
+        before do
+          sm.handle_ch('2')
+          sm.handle_ch('a')
+        end
 
-      it 'returns the correct move' do
-        cmd = Freecell::GameStateCommand.new(
-          type: :cascade_to_cascade,
-          source_index: 1,
-          dest_index: 2
-        )
-        expect(subject).to eq(cmd)
+        subject do
+          sm.handle_ch('b')
+        end
+
+        it 'returns the correct move' do
+          cmd = Freecell::GameStateCommand.new(
+            type: :cascade_to_cascade,
+            source_index: 0,
+            dest_index: 1,
+            num_cards: 2
+          )
+          expect(subject).to eq(cmd)
+        end
       end
     end
 

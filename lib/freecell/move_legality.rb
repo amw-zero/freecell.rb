@@ -8,10 +8,9 @@ module Freecell
     end
 
     def cascade_to_cascade_move?(command)
-      source_card = @cascades[command.source_index].last
+      return false if command.num_cards > num_movable_cards(command)
       return true if @cascades[command.dest_index].empty?
-      dest_card = @cascades[command.dest_index].last
-      legal_cascade_move?(source_card, dest_card)
+      cascade_cards_legal?(command)
     end
 
     def cascade_to_free_cell_move?
@@ -35,6 +34,13 @@ module Freecell
 
     private
 
+    def cascade_cards_legal?(command)
+      legal_cascade_move?(
+        @cascades[command.source_index][-command.num_cards],
+        @cascades[command.dest_index].last
+      ) && all_source_cards_legal?(command)
+    end
+
     def legal_foundation_move?(source_card)
       return false if source_card.nil?
       return true if source_card.rank == 1
@@ -48,6 +54,25 @@ module Freecell
       return true if dest_card.nil?
       one_less_than_dest = source_card.rank == dest_card.rank - 1
       one_less_than_dest && source_card.opposite_color?(dest_card)
+    end
+
+    def num_movable_cards(command)
+      open_cascades = @cascades.select { |c| c.length.zero? }.length
+      open_cascades -= 1 if @cascades[command.dest_index].empty?
+      open_free_cells = 4 - @free_cells.length
+      2**open_cascades + open_free_cells
+    end
+
+    def all_source_cards_legal?(command)
+      source_cascade = @cascades[command.source_index]
+      cards = source_cascade[-command.num_cards, command.num_cards]
+      if cards.length > 1
+        cards.each_cons(2).all? do |l, r|
+          legal_cascade_move?(r, l)
+        end
+      else
+        true
+      end
     end
   end
 end

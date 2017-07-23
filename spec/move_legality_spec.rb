@@ -29,23 +29,56 @@ describe Freecell::MoveLegality do
       legality.cascade_to_cascade_move?(command)
     end
 
-    context 'when the move is legal' do
-      let(:cascades) do
-        [[s3], [h4]]
+    context 'when the move is a multi card move' do
+      let(:command) do
+        Freecell::GameStateCommand.new(
+          type: :any,
+          source_index: 0,
+          dest_index: 1,
+          num_cards: 2
+        )
       end
 
-      it 'allows the move' do
-        expect(subject).to be true
+      context 'when the move is legal' do
+        let(:cascades) do
+          [[s3, h2], [h4]]
+        end
+
+        it 'allows the move' do
+          expect(subject).to be true
+        end
+      end
+
+      context 'when the move is not legal' do
+        let(:cascades) do
+          [[s3, s3], [h4]]
+        end
+
+        it 'allows the move' do
+          expect(subject).to be false
+        end
       end
     end
 
-    context 'when the move is not legal' do
-      let(:cascades) do
-        [[h3], [h4]]
+    context 'when the move is a single card move' do
+      context 'when the move is legal' do
+        let(:cascades) do
+          [[s3], [h4]]
+        end
+
+        it 'allows the move' do
+          expect(subject).to be true
+        end
       end
 
-      it 'does not allow the move' do
-        expect(subject).to eq(false)
+      context 'when the move is not legal' do
+        let(:cascades) do
+          [[h3], [h4]]
+        end
+
+        it 'does not allow the move' do
+          expect(subject).to eq(false)
+        end
       end
     end
   end
@@ -116,7 +149,7 @@ describe Freecell::MoveLegality do
     end
 
     context 'when the move is legal' do
-      context 'when the foundation for the suit is empty and the card is an Ace' do
+      context 'when the foundation is empty and the card is an Ace' do
         let(:cascades) do
           [[h1]]
         end
@@ -140,7 +173,7 @@ describe Freecell::MoveLegality do
         end
 
         it 'allows the move' do
-          expect(subject).to be  true
+          expect(subject).to be true
         end
       end
     end
@@ -171,7 +204,7 @@ describe Freecell::MoveLegality do
       end
 
       let(:foundations) do
-        { hearts: [h3]}
+        { hearts: [h3] }
       end
 
       it 'allows the move' do
@@ -185,7 +218,7 @@ describe Freecell::MoveLegality do
       end
 
       let(:foundations) do
-        { hearts: [h3]}
+        { hearts: [h3] }
       end
 
       it 'does not allow the move' do
