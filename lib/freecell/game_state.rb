@@ -122,7 +122,7 @@ module Freecell
     end
 
     def perform_undo(_)
-      return unless history.length > 1
+      return unless @history.length > 1
       @history.pop
       previous_state = @history.last
       @free_cells = previous_state[:free_cells].map(&:dup)
