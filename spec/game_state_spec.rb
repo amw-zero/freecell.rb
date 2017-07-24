@@ -341,5 +341,86 @@ describe Freecell::GameState do
         expect(game_state.num_moves).to eq(0)
       end
     end
+
+    context 'when applying an undo command' do
+      let(:game_state) do
+        cascades = [
+          [s3]
+        ]
+        Freecell::GameState.new(cascades)
+      end
+
+      let(:free_cell_command) do
+        Freecell::GameStateCommand.new(
+          type: :cascade_to_free_cell,
+          source_index: 0
+        )
+      end
+
+      let(:undo_command) do
+        Freecell::GameStateCommand.new(type: :undo)
+      end
+
+      before do
+        game_state.apply(free_cell_command)
+        game_state.apply(undo_command)
+      end
+
+      it 'undoes the move' do
+        expect(game_state.cascades).to eq([[s3]])
+      end
+    end
+
+    context 'when applying an undo command multiple times' do
+      let(:game_state) do
+        cascades = [
+          [s3],
+          [h4]
+        ]
+        Freecell::GameState.new(cascades)
+      end
+
+      let(:free_cell_command) do
+        Freecell::GameStateCommand.new(
+          type: :cascade_to_free_cell,
+          source_index: 0
+        )
+      end
+
+      let(:undo_command) do
+        Freecell::GameStateCommand.new(type: :undo)
+      end
+
+      let(:cascade_command) do
+        Freecell::GameStateCommand.new(
+          type: :cascade_to_cascade,
+          source_index: 0,
+          dest_index: 1
+        )
+      end
+
+      before do
+        game_state.apply(free_cell_command)
+      end
+
+      it 'does stuff' do
+        expect(game_state.cascades[0]).to be_empty
+
+        game_state.apply(undo_command)
+        expect(game_state.cascades[0]).to eq([s3])
+        expect(game_state.free_cells).to be_empty
+
+        game_state.apply(free_cell_command)
+        expect(game_state.cascades[0]).to be_empty
+
+        game_state.apply(undo_command)
+        expect(game_state.cascades[0]).to eq([s3])
+        expect(game_state.free_cells).to be_empty
+
+        game_state.apply(cascade_command)
+        expect(game_state.cascades[0]).to be_empty
+        expect(game_state.cascades[1]).to eq([h4, s3])
+      end
+    end
   end
 end

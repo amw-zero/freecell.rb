@@ -47,6 +47,10 @@ module Freecell
       ch == CARRIAGE_RETURN_BYTE
     end
 
+    def undo_letter?(ch)
+      ch == 'u'
+    end
+
     def number?(ch)
       !(ch =~ /[2-9]/).nil?
     end
@@ -100,6 +104,8 @@ module Freecell
             handle_free_cell_letter(ch)
           elsif @parser.cascade_letter?(ch)
             handle_cascade_letter(ch)
+          elsif @parser.undo_letter?(ch)
+            handle_undo_letter
           else
             @next_state_event = :reset
             GameStateCommand.new(type: :reset_state)
@@ -130,6 +136,11 @@ module Freecell
             source_index: @source_index,
             num_cards: @num_cards
           )
+        end
+
+        def handle_undo_letter
+          @next_state_event = :reset
+          GameStateCommand.new(type: :undo)
         end
       end
 

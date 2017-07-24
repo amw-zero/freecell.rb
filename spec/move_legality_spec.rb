@@ -9,7 +9,7 @@ describe Freecell::MoveLegality do
   let(:s3) { Freecell::Card.new(3, :spades) }
 
   let(:legality) do
-    Freecell::MoveLegality.new(cascades, free_cells, foundations)
+    Freecell::MoveLegality.new
   end
 
   let(:cascades) { [] }
@@ -26,7 +26,7 @@ describe Freecell::MoveLegality do
 
   describe '#cascade_to_cascade_move?' do
     subject do
-      legality.cascade_to_cascade_move?(command)
+      legality.cascade_to_cascade_move?(command, cascades, free_cells)
     end
 
     context 'when the move is a multi card move' do
@@ -85,7 +85,7 @@ describe Freecell::MoveLegality do
 
   describe '#cascade_to_free_cell_move?' do
     subject do
-      legality.cascade_to_free_cell_move?
+      legality.cascade_to_free_cell_move?(free_cells)
     end
 
     let(:cascades) do
@@ -115,7 +115,7 @@ describe Freecell::MoveLegality do
 
   describe '#free_cell_to_cascade_move?' do
     subject do
-      legality.free_cell_to_cascade_move?(command)
+      legality.free_cell_to_cascade_move?(command, cascades, free_cells)
     end
 
     let(:cascades) do
@@ -145,7 +145,7 @@ describe Freecell::MoveLegality do
 
   describe '#cascade_to_foundation_move?' do
     subject do
-      legality.cascade_to_foundation_move?(command)
+      legality.cascade_to_foundation_move?(command, cascades, foundations)
     end
 
     context 'when the move is legal' do
@@ -195,7 +195,7 @@ describe Freecell::MoveLegality do
 
   describe '#free_cell_to_foundation_move?' do
     subject do
-      legality.free_cell_to_foundation_move?(command)
+      legality.free_cell_to_foundation_move?(command, free_cells, foundations)
     end
 
     context 'when then move is legal' do

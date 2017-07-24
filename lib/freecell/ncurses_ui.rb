@@ -84,12 +84,20 @@ module Freecell
     end
 
     def render_bottom_area(game_state)
-      Curses.attron(black_card_color)
-      Curses.addstr('q')
-      Curses.attroff(black_card_color)
+      with_highlight_coloring { Curses.addstr('q') }
       Curses.addstr('uit')
+
+      Curses.setpos(@curr_y, 5)
+      with_highlight_coloring { Curses.addstr('u') }
+      Curses.addstr('ndo')
+
+      Curses.setpos(@curr_y, 10)
+      with_highlight_coloring { Curses.addstr('?') }
+      Curses.addstr('=help')
       Curses.setpos(@curr_y, 28)
-      Curses.addstr("#{game_state.num_moves} moves")
+      Curses.addstr("#{game_state.num_moves} moves,")
+      Curses.setpos(@curr_y, 37)
+      Curses.addstr("#{game_state.num_undos} undos")
     end
 
     def render_free_cells(game_state)
@@ -219,6 +227,12 @@ module Freecell
       attr = red_selected_card_color if card.red? && card_is_selected
       attr = black_selected_card_color if card.black? && card_is_selected
       attr
+    end
+
+    def with_highlight_coloring
+      Curses.attron(black_card_color)
+      yield
+      Curses.attroff(black_card_color)
     end
 
     def advance_y(by:)
