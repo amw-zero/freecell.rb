@@ -15,6 +15,7 @@ module Freecell
 
     def free_cell_to_cascade_move?(command, cascades, free_cells)
       source_card = free_cells[command.source_index]
+      return false unless source_card
       dest_card = cascades[command.dest_index].last
       legal_move = legal_cascade_move?(source_card, dest_card)
       legal_move && !free_cells[command.source_index].nil?
