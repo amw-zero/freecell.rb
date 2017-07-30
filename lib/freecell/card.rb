@@ -22,20 +22,18 @@ module Freecell
       %i[hearts diamonds].include?(suit)
     end
 
+    def color
+      case suit
+      when :hearts, :diamonds
+        :red
+      when :spades, :clubs
+        :black
+      end
+    end
+
     def opposite_color?(other)
       red = %i[hearts diamonds]
       red.include?(suit) ^ red.include?(other.suit)
-    end
-  end
-
-  # Used for printing
-  class EmptyCard
-    def black?
-      false
-    end
-
-    def red?
-      false
     end
   end
 end
